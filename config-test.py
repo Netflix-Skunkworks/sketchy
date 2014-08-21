@@ -26,10 +26,12 @@ CELERY_RESULT_BACKEND = 'redis://localhost:6379'
 
 # Set hostname:port of your server or IP address if running in test setup
 # If you are using Nginx with SSL, only specify IP or Hostname
-HOST = '127.0.0.1:8000'
+# Alterntively, you can export the 'host' variable on your system to set this as well
+HOST = os.getenv('host', '127.0.0.1:8000')
 
-# Set to true if you are serving Sketchy over SSL with Nginx
-SSL = False
+# Set to true if you are serving Sketchy over SSL with Nginx (default is False)
+# Alternatively, you can export the 'use_ssl' variable on yoru system as well
+SSL = os.getenv('use_ssl', False)
 
 # Local Screenshot storage
 LOCAL_STORAGE_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'files')
