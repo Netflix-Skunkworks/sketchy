@@ -30,7 +30,7 @@ CELERY_RESULT_BACKEND = 'redis://localhost:6379'
 HOST = os.getenv('host', '127.0.0.1:8000')
 
 # Set to true if you are serving Sketchy over SSL with Nginx (default is False)
-# Alternatively, you can export the 'use_ssl' variable on yoru system as well
+# Alternatively, you can export the 'use_ssl' variable on your system as well
 SSL = os.getenv('use_ssl', False)
 
 # Local Screenshot storage
