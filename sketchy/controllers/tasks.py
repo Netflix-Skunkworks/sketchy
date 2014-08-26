@@ -23,10 +23,10 @@ from requests import post
 from boto.s3.key import Key
 from boto.s3.connection import OrdinaryCallingFormat
 from subprocess32 import PIPE
-from tld import get_tld
 from collections import defaultdict
 from sketchy import db, app, celery
 from sketchy.models.capture import Capture
+from sketchy.controllers.validators import grab_domain
 import subprocess32
 
 
@@ -79,7 +79,7 @@ def do_capture(status_code, capture_record, hostname="", ssl=False):
     """
     # Make sure the capture_record
     db.session.add(capture_record)
-    capture_name = get_tld(capture_record.url) + '_' + str(capture_record.id)
+    capture_name = grab_domain(capture_record.url) + '_' + str(capture_record.id)
     service_args = [app.config['PHANTOMJS'], 
     '--ssl-protocol=any', 
     '--ignore-ssl-errors=yes',

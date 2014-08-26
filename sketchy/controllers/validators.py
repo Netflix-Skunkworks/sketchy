@@ -12,6 +12,7 @@
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
 import requests
+from tldextract import extract
 
 def get_server_status_code(url):
     """
@@ -27,6 +28,17 @@ def get_server_status_code(url):
         return None
     except:
         return None
+
+def grab_domain(url):
+    """
+    Returns the domain of a URL
+    """
+    try:
+        url = extract(url)
+    except Exception:
+        raise Exception("This URL doesn't work: \"{0}\"".format(url))
+    #concatenate subdomain, domain and tld
+    return '.'.join((url[0], url[1], url[2])) 
 
 def check_url(capture_record):
     """
