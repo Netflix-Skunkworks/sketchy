@@ -15,3 +15,6 @@ Sketchy utilizes PhantomJS with [lazy-rendering](https://github.com/kimmobrunfel
 #Documentation#
 
 Documentation is maintained in the Github [Wiki](https://github.com/Netflix/Sketchy/wiki)
+
+#Docker#
+Sketchy is also available as a [Docker](https://github.com/sbehrens/docker_sketchy) container.  
