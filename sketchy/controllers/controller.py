@@ -14,9 +14,8 @@
 import tasks
 
 from sketchy import db, app
-from tld import get_tld
 from sketchy.models.capture import Capture
-from sketchy.controllers.validators import check_url
+from sketchy.controllers.validators import check_url, grab_domain
 from flask import request, send_from_directory
 from flask.ext.restful import Resource, reqparse
 from celery import chain
@@ -144,10 +143,13 @@ class Eager(Resource):
         # Refresh capture_record to obtain an ID for record
         db.session.refresh(capture_record)
 
-        # dict of functions that generate capture names
-        capture_names = {'html': get_tld(capture_record.url) + '_' + str(capture_record.id) + '.html',
-        'sketch': get_tld(capture_record.url) + '_' + str(capture_record.id) + '.png',
-        'scrape': get_tld(capture_record.url) + '_' + str(capture_record.id) + '.txt'}
+        try:
+            # dict of functions that generate capture names
+            capture_names = {'html': grab_domain(capture_record.url) + '_' + str(capture_record.id) + '.html',
+            'sketch': grab_domain(capture_record.url) + '_' + str(capture_record.id) + '.png',
+            'scrape': grab_domain(capture_record.url) + '_' + str(capture_record.id) + '.txt'}
+        except:
+            return 'This is not a valid URL', 406
 
         # Check that url is valid and responsive
         if not check_url(capture_record):

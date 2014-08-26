@@ -30,7 +30,7 @@ setup(
             'Flask-RESTful==0.2.12',
             'requests==2.3.0',
             'gunicorn==19.1.0',
-            'tld==0.6.4',
+            'tldextract==1.4',
             'supervisor==3.1.0',
             'celery==3.1.13',
             'boto==2.32.1',
