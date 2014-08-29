@@ -47,7 +47,8 @@ var Page = (function(opts) {
     };
     page.settings.userAgent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/36.0.1944.0 Safari/537.36';
     page.customHeaders = {
-      'Accept-Encoding': 'foo',
+      // Nullify Accept-Encoding header to disable compression (https://github.com/ariya/phantomjs/issues/10930)
+      'Accept-Encoding': ' ',
     };
     page.onInitialized = function() {
         page.customHeaders = {};
@@ -110,8 +111,8 @@ function main() {
 
     var isHelp = args[1] === '-h' || args[1] === '--help';
     if (args.length === 1 || isHelp) {
-        var help = 'Usage: phantomjs url-to-image.js <url> <output-file-without-extension> [width] [height]\n';
-        help += 'Example: phantomjs url-to-image.js http://google.com google 1200 800';
+        var help = 'Usage: phantomjs capture.js <url> <output-file-without-extension> [width] [height]\n';
+        help += 'Example: phantomjs capture.js http://google.com google 1200 800';
         die(help);
     }
 
