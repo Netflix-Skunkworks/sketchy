@@ -53,7 +53,7 @@ S3_LINK_EXPIRATION = 6000000
 
 # Token Auth Setup
 REQUIRE_AUTH = False
-AUTH_TOKEN = 'your-secret-auth-token-here'
+AUTH_TOKEN = os.getenv('auth_token', 'test')
 
 # Log file configuration (currently only logs errors)
 SKETCHY_LOG_FILE = "sketchy.log"
