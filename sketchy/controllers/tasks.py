@@ -45,7 +45,7 @@ def check_url(self, capture_id=0, retries=0):
     # Only retrieve the headers of the request, and return respsone code
     try:
         response = ""
-        response = requests.get(capture_record.url, headers={"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.9; rv:28.0) Gecko/20100101 Firefox/28.0"})
+        response = requests.get(capture_record.url, allow_redirects=False, headers={"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.9; rv:28.0) Gecko/20100101 Firefox/28.0"})
         capture_record.url_response_code = response.status_code
         the_code = response.status_code
         if capture_record.status_only:
