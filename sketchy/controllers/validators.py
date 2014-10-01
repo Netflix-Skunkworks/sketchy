@@ -38,7 +38,7 @@ def grab_domain(url):
     except Exception:
         raise Exception("This URL doesn't work: \"{0}\"".format(url))
     #concatenate subdomain, domain and tld
-    return '.'.join((url[0], url[1], url[2])) 
+    return '.'.join((url[0], url[1], url[2])) if url[0] else '.'.join((url[1], url[2]))
 
 def check_url(capture_record):
     """
