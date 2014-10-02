@@ -77,7 +77,7 @@ def app_key_check(view_function):
     @wraps(view_function)
     def decorated_function(*args, **kwargs):
         if app.config['REQUIRE_AUTH'] == True and app.config['AUTH_TOKEN']:
-            if request.headers.get('Token') == app.config['AUTH_TOKEN']:
+            if request.headers.get('Token') == app.config['AUTH_TOKEN'] or request.args.get('token') == app.config['AUTH_TOKEN']:
                 return view_function(*args, **kwargs)
             else:
                 app.logger.error("Missing required 'TOKEN'")
