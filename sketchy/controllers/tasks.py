@@ -204,7 +204,7 @@ def finisher(capture_record):
     
     # Set the correct headers for the postback
     headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
-    req = post(capture_record.callback, data=json.dumps(capture_record.as_dict()), headers=headers)
+    req = post(capture_record.callback, verify=False, data=json.dumps(capture_record.as_dict()), headers=headers)
     
     # If a 4xx or 5xx status is recived, raise an exception
     req.raise_for_status()
