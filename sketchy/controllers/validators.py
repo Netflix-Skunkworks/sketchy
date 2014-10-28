@@ -12,6 +12,7 @@
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
 import requests
+from sketchy import db, app
 from tldextract import extract
 
 def get_server_status_code(url):
@@ -20,7 +21,8 @@ def get_server_status_code(url):
     """
     # Only retrieve the headers of the request, and return respsone code
     try:
-        response = requests.get(url, headers={"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.9; rv:28.0) Gecko/20100101 Firefox/28.0"})
+        verify_ssl = app.config['SSL_HOST_VALIDATION']
+        response = requests.get(url, headers={"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.9; rv:28.0) Gecko/20100101 Firefox/28.0"}, verify=verify_ssl)
         return response.status_code
     except requests.ConnectionError:
         return None

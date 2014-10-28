@@ -57,3 +57,6 @@ AUTH_TOKEN = os.getenv('auth_token', 'test')
 
 # Log file configuration (currently only logs errors)
 SKETCHY_LOG_FILE = "sketchy.log"
+
+# Perform SSL host validation (set to False if you want to scrape/screenshot sketchy websites)
+SSL_HOST_VALIDATION = True
