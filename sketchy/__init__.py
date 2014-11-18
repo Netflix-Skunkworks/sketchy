@@ -53,17 +53,19 @@ def make_celery(app):
 
         def on_failure(self, exc, task_id, args, kwargs, einfo):
             from sketchy.controllers.tasks import finisher
-            capture_record = Capture.query.filter(Capture.id == kwargs['capture_id']).first()
-            capture_record.job_status = 'FAILURE'
-            app.logger.error(exc)
             try:
+                capture_record = Capture.query.filter(Capture.id == kwargs['capture_id']).first()
+                capture_record.job_status = 'FAILURE'
+                app.logger.error(exc)
+
                 db.session.add(capture_record)
                 db.session.commit()
             except IntegrityError, exc:
                 app.logger.error(exc)
-                
-            if capture_record.callback:
+
+            if capture_record and capture_record.callback:
                 finisher(capture_record)
+
     celery.Task = ContextTask
     return celery
 
