@@ -36,7 +36,6 @@ setup(
             'boto==2.32.1',
             'redis==2.10.1',
             'lxml==3.3.5',
-            'MySQL-python==1.2.5',
             'subprocess32==3.2.6'
         ]
 )
