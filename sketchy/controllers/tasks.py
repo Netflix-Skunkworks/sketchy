@@ -123,9 +123,9 @@ def do_capture(status_code, capture_record, hostname="", ssl=False):
     parsed_text.write(output)
    
     # Update the sketch record with the local URLs for the sketch, scrape, and html captures
-    capture_record.sketch_url = 'http://' + hostname + '/files/' + capture_name + '.png' if ssl == False else 'https://' + hostname + '/files/' + capture_name + '.png'
-    capture_record.scrape_url = 'http://' + hostname + '/files/' + capture_name + '.txt' if ssl == False else 'https://' + hostname + '/files/' + capture_name + '.txt'
-    capture_record.html_url = 'http://' + hostname + '/files/' + capture_name + '.html' if ssl == False else 'https://' + hostname + '/files/' + capture_name + '.html'
+    capture_record.sketch_url = '/files/' + capture_name + '.png'
+    capture_record.scrape_url = '/files/' + capture_name + '.txt'
+    capture_record.html_url = '/files/' + capture_name + '.html'
 
     # Create a dict that contains what files may need to be written to S3
     files_to_write = defaultdict(list)
