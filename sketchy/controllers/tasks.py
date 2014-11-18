@@ -47,7 +47,6 @@ def check_url(self, capture_id=0, retries=0):
         response = ""
         response = requests.get(capture_record.url, allow_redirects=False, headers={"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.9; rv:28.0) Gecko/20100101 Firefox/28.0"})
         capture_record.url_response_code = response.status_code
-        the_code = response.status_code
         if capture_record.status_only:
             capture_record.job_status = 'COMPLETED'
             capture_record.capture_status = '%s HTTP STATUS CODE' % (response.status_code)
@@ -68,7 +67,8 @@ def check_url(self, capture_id=0, retries=0):
         db.session.commit()
     return str(response.status_code)
 
-def do_capture(status_code, capture_record, hostname="", ssl=False):
+
+def do_capture(status_code, capture_record, base_url):
     """
     Create a screenshot, text scrape, and html file for provided capture_record url.
 
@@ -80,12 +80,13 @@ def do_capture(status_code, capture_record, hostname="", ssl=False):
     # Make sure the capture_record
     db.session.add(capture_record)
     capture_name = grab_domain(capture_record.url) + '_' + str(capture_record.id)
-    service_args = [app.config['PHANTOMJS'], 
-    '--ssl-protocol=any', 
-    '--ignore-ssl-errors=yes',
-    os.path.dirname(os.path.dirname(os.path.abspath(__file__))) + '/assets/capture.js',
-    capture_record.url,
-    os.path.join(app.config['LOCAL_STORAGE_FOLDER'], capture_name)]
+    service_args = [
+        app.config['PHANTOMJS'],
+        '--ssl-protocol=any',
+        '--ignore-ssl-errors=yes',
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__))) + '/assets/capture.js',
+        capture_record.url,
+        os.path.join(app.config['LOCAL_STORAGE_FOLDER'], capture_name)]
 
     # Using subprocess32 backport, call phantom and if process hangs kill it
     pid = subprocess32.Popen(service_args, stdout=PIPE, stderr=PIPE)
@@ -102,7 +103,7 @@ def do_capture(status_code, capture_record, hostname="", ssl=False):
         raise Exception(stderr)
 
     # Strip tags and parse out all text
-    ignore_tags=('script','noscript','style')
+    ignore_tags = ('script', 'noscript', 'style')
     with open(os.path.join(app.config['LOCAL_STORAGE_FOLDER'], capture_name + '.html'), 'r') as content_file:
         content = content_file.read()
     cleaner = clean.Cleaner()
@@ -110,10 +111,11 @@ def do_capture(status_code, capture_record, hostname="", ssl=False):
     doc = LH.fromstring(content)
     output = ""
     for elt in doc.iterdescendants():
-        if elt.tag in ignore_tags: continue
+        if elt.tag in ignore_tags:
+            continue
         text = elt.text or ''
         tail = elt.tail or ''
-        wordz = " ".join((text,tail)).strip('\t')
+        wordz = " ".join((text, tail)).strip('\t')
 
         if wordz and len(wordz) >= 2 and not re.match("^[ \t\n]*$", wordz):
             output += wordz.encode('utf-8')
@@ -121,11 +123,11 @@ def do_capture(status_code, capture_record, hostname="", ssl=False):
     # Wite our html text that was parsed into our capture folder
     parsed_text = open(os.path.join(app.config['LOCAL_STORAGE_FOLDER'], capture_name + '.txt'), 'wb')
     parsed_text.write(output)
-   
+
     # Update the sketch record with the local URLs for the sketch, scrape, and html captures
-    capture_record.sketch_url = 'http://' + hostname + '/files/' + capture_name + '.png' if ssl == False else 'https://' + hostname + '/files/' + capture_name + '.png'
-    capture_record.scrape_url = 'http://' + hostname + '/files/' + capture_name + '.txt' if ssl == False else 'https://' + hostname + '/files/' + capture_name + '.txt'
-    capture_record.html_url = 'http://' + hostname + '/files/' + capture_name + '.html' if ssl == False else 'https://' + hostname + '/files/' + capture_name + '.html'
+    capture_record.sketch_url = base_url + '/files/' + capture_name + '.png'
+    capture_record.scrape_url = base_url + '/files/' + capture_name + '.txt'
+    capture_record.html_url = base_url + '/files/' + capture_name + '.html'
 
     # Create a dict that contains what files may need to be written to S3
     files_to_write = defaultdict(list)
@@ -150,7 +152,7 @@ def s3_save(files_to_write, capture_record):
     db.session.add(capture_record)
     # These are the content-types for the files S3 will be serving up
     reponse_types = {'sketch': 'image/png', 'scrape': 'text/plain', 'html': 'text/html'}
-    
+
     # Iterate through each file we need to write to s3
     for capture_type, file_name in files_to_write.items():
         # Connect to S3, generate Key, set path based on capture_type, write file to S3
@@ -174,15 +176,15 @@ def s3_save(files_to_write, capture_record):
         # Generate appropriate url based on capture_type
         if capture_type == 'sketch':
             capture_record.sketch_url = str(url)
-            #print capture_record.sketch_url
+            # print capture_record.sketch_url
         if capture_type == 'scrape':
             capture_record.scrape_url = str(url)
-            #print capture_record.scrape_url
+            # print capture_record.scrape_url
         if capture_type == 'html':
             capture_record.html_url = str(url)
-            #print capture_record.html_url
+            # print capture_record.html_url
 
-    # Remove local files if we are saving to S3 
+    # Remove local files if we are saving to S3
     os.remove(os.path.join(app.config['LOCAL_STORAGE_FOLDER'], files_to_write['sketch']))
     os.remove(os.path.join(app.config['LOCAL_STORAGE_FOLDER'], files_to_write['scrape']))
     os.remove(os.path.join(app.config['LOCAL_STORAGE_FOLDER'], files_to_write['html']))
@@ -196,16 +198,17 @@ def s3_save(files_to_write, capture_record):
         capture_record.job_status = 'COMPLETED'
     db.session.commit()
 
+
 def finisher(capture_record):
     """
     POST finished chain to a callback URL provided
     """
     db.session.add(capture_record)
-    
+
     # Set the correct headers for the postback
     headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
     req = post(capture_record.callback, verify=False, data=json.dumps(capture_record.as_dict()), headers=headers)
-    
+
     # If a 4xx or 5xx status is recived, raise an exception
     req.raise_for_status()
 
@@ -216,7 +219,7 @@ def finisher(capture_record):
 
 
 @celery.task(name='celery_capture', ignore_result=True, bind=True)
-def celery_capture(self, status_code, hostname="", ssl=False, capture_id=0, retries=0):
+def celery_capture(self, status_code, base_url, capture_id=0, retries=0):
     """
     Celery task used to create sketch, scrape, html.
     Task also writes files to S3 or posts a callback depending on configuration file.
@@ -240,16 +243,16 @@ def celery_capture(self, status_code, hostname="", ssl=False, capture_id=0, retr
         capture_record.job_status = 'RETRY'
         capture_record.capture_status = str(err)
         capture_record.retry = retries + 1
-        raise celery_capture.retry(args=[status_code, hostname, ssl], 
-            kwargs={'capture_id' :capture_id, 'retries': capture_record.retry + 1}, exc=err, 
-            countdown=app.config['COOLDOWN'], 
+        raise celery_capture.retry(args=[status_code, base_url],
+            kwargs = { 'capture_id' :capture_id, 'retries': capture_record.retry + 1}, exc=err,
+            countdown=app.config['COOLDOWN'],
             max_retries=app.config['MAX_RETRIES'])
     finally:
         db.session.commit()
     # First perform the captures, then either write to S3, perform a callback, or neither
     try:
-    # call the main capture function to retrieve sketches, scrapes, and html
-        files_to_write = do_capture(status_code, capture_record, hostname, ssl)
+        # call the main capture function to retrieve sketches, scrapes, and html
+        files_to_write = do_capture(status_code, capture_record, base_url)
         # Call the s3 save funciton if s3 is configured, and perform callback if configured.
         if app.config['USE_S3']:
             if capture_record.callback:
@@ -266,9 +269,9 @@ def celery_capture(self, status_code, hostname="", ssl=False, capture_id=0, retr
         capture_record.job_status = 'RETRY'
         capture_record.capture_status = str(err)
         capture_record.retry = retries + 1
-        raise celery_capture.retry(args=[status_code, hostname, ssl], 
-            kwargs={'capture_id' :capture_id, 'retries': capture_record.retry + 1}, exc=err, 
-            countdown=app.config['COOLDOWN'], 
+        raise celery_capture.retry(args=[status_code, base_url],
+            kwargs={'capture_id' :capture_id, 'retries': capture_record.retry + 1}, exc=err,
+            countdown=app.config['COOLDOWN'],
             max_retries=app.config['MAX_RETRIES'])
     finally:
         db.session.commit()

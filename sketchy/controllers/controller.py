@@ -16,7 +16,7 @@ import tasks
 from sketchy import db, app
 from sketchy.models.capture import Capture
 from sketchy.controllers.validators import check_url, grab_domain
-from flask import request, send_from_directory
+from flask import send_from_directory
 from flask.ext.restful import Resource, reqparse
 from celery import chain
 from sqlalchemy.exc import IntegrityError
@@ -48,6 +48,7 @@ class CaptureView(Resource):
         else:
             return 'No capture found!', 404
 
+
 class CaptureViewList(Resource):
     """
     API Provides CRUD operations for Capturees.
@@ -65,14 +66,13 @@ class CaptureViewList(Resource):
             results.append(row.as_dict())
 
         return results
-        
+
     def post(self):
         """
         Create a new sketch record and call celery tasks for populating record data
         """
         # Determine the hostname/port as well as scheme of webserver
-        hostname = app.config['HOST']
-        ssl = app.config['SSL']
+        base_url = app.config['BASE_URL']
 
         # Parse out all arguments that may be provided by requestor
         args = JSONPARSER.parse_args()
@@ -92,13 +92,14 @@ class CaptureViewList(Resource):
         db.session.refresh(capture_record)
 
         # If status_only flag enabled, just capture status code from URL
-        if capture_record.status_only == True:
+        if capture_record.status_only is True:
             tasks.check_url.delay(capture_id=capture_record.id)
         else:
             # If the application is configured for S3 store contents in a bucket
             # This will first check if URL is valid, then sketch, scrape, and store files
             celery_sketch = chain(tasks.check_url.s(capture_id=capture_record.id),
-                            tasks.celery_capture.s(hostname, ssl, capture_id=capture_record.id)).apply_async()
+                                  tasks.celery_capture.s(base_url, capture_id=capture_record.id)
+                                  ).apply_async()
 
         # Commit all changes to DB and return JSON
         db.session.commit()
@@ -121,8 +122,7 @@ class Eager(Resource):
         Retrieve Capture based on id
         """
         args = EAGERPARSER.parse_args()
-        hostname = app.config['HOST']
-        ssl = app.config['SSL']
+        base_url = app.config['BASE_URL']
 
         app.config.update(USE_S3=False)
         # Parse out url and capture type
@@ -146,8 +146,8 @@ class Eager(Resource):
         try:
             # dict of functions that generate capture names
             capture_names = {'html': grab_domain(capture_record.url) + '_' + str(capture_record.id) + '.html',
-            'sketch': grab_domain(capture_record.url) + '_' + str(capture_record.id) + '.png',
-            'scrape': grab_domain(capture_record.url) + '_' + str(capture_record.id) + '.txt'}
+                             'sketch': grab_domain(capture_record.url) + '_' + str(capture_record.id) + '.png',
+                             'scrape': grab_domain(capture_record.url) + '_' + str(capture_record.id) + '.txt'}
         except:
             return 'This is not a valid URL', 406
 
@@ -157,14 +157,15 @@ class Eager(Resource):
 
         # file_to_write is a placeholder in eager calls
         file_to_write = {}
-        
+
         try:
             # Call eager_capture to create scrape, sketch, and html file (blocking)
-            files_to_write = tasks.do_capture(200, capture_record, hostname, ssl)
+            files_to_write = tasks.do_capture(200, capture_record, base_url)
 
             if capture_type in capture_names:
                 return send_from_directory(app.config['LOCAL_STORAGE_FOLDER'],
-                                   capture_names[capture_type], as_attachment=True)
+                                           capture_names[capture_type],
+                                           as_attachment=True)
             else:
                 return 'Incorrect capture type specified: html, sketch, or scrape', 406
         except Exception as err:
