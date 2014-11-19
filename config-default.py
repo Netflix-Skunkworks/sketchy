@@ -20,10 +20,11 @@ DEBUG = False
 # Database setup
 SQLALCHEMY_DATABASE_URI = 'sqlite:////tmp/sketchy-db.db'
 
-# Set hostname:port of your server or IP address if running in test setup
-# If you are using Nginx with SSL, only specify IP or Hostname
-# Alterntively, you can export the 'host' variable on your system to set this as well
-BASE_URL = 'https://%s' % os.getenv('host', '127.0.0.1:8000')
+# Set scheme and hostname:port of your server.
+# Alterntively, you can export the 'host' variable on your system to set the
+# host and port.
+# If you are using Nginx with SSL, change the scheme to https.
+BASE_URL = 'http://%s' % os.getenv('host', '127.0.0.1:8000')
 
 # Broker configuration information, currently only supporting Redis
 CELERY_BROKER_URL = 'redis://localhost:6379'

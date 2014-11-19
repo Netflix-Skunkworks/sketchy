@@ -24,10 +24,11 @@ SQLALCHEMY_DATABASE_URI = 'sqlite:////tmp/sketchy-tests.db'
 CELERY_BROKER_URL = 'redis://localhost:6379'
 CELERY_RESULT_BACKEND = 'redis://localhost:6379'
 
-# Set hostname:port of your server or IP address if running in test setup
-# If you are using Nginx with SSL, only specify IP or Hostname
-# Alterntively, you can export the 'host' variable on your system to set this as well
-BASE_URL = 'https://%s' % os.getenv('host', '127.0.0.1:8000')
+# Set scheme and hostname:port of your server.
+# Alterntively, you can export the 'host' variable on your system to set the
+# host and port.
+# If you are using Nginx with SSL, change the scheme to https.
+BASE_URL = 'http://%s' % os.getenv('host', '127.0.0.1:8000')
 
 # Local Screenshot storage
 LOCAL_STORAGE_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'files')
