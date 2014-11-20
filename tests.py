@@ -27,7 +27,7 @@ class Sketch(unittest.TestCase):
     def setUp(self):
         self.test_app = app.test_client()
         db.create_all()
-        
+
     def tearDown(self):
         db.session.remove()
         db.drop_all()
@@ -41,7 +41,7 @@ class Sketch(unittest.TestCase):
         print str(rv.data)
 
         return (rv.status_code, rv.data, rv.headers)
-    
+
     def token_get(self, endpoint):
         rv = self.test_app.get(endpoint, content_type='text/html', headers=[('Token', 'test')])
         print str(rv.data)
@@ -51,7 +51,7 @@ class Sketch(unittest.TestCase):
         rv = self.test_app.get(endpoint, content_type='application/json')
         self.check_content_type(rv.headers)
         return (rv.status_code, json.loads(rv.data))
-    
+
     def post(self, endpoint, data):
         rv = self.test_app.post(endpoint, data=json.dumps(data), content_type='application/json')
         self.check_content_type(rv.headers)
@@ -60,7 +60,7 @@ class Sketch(unittest.TestCase):
 class SketchApiTestCase(Sketch):
     """Class of unit tests"""
     _multiprocess_shared_ = True
-        
+
 
     def test_without_json_body(self):
         blob = {}
@@ -95,7 +95,7 @@ class SketchApiTestCase(Sketch):
 
         self.assertEquals(code, 406)
 
-        
+
     def test_celery_sketch(self):
         from sketchy.models.capture import Capture
         capture_record = Capture()
@@ -105,7 +105,7 @@ class SketchApiTestCase(Sketch):
         db.session.refresh(capture_record)
 
         app.config.update(USE_S3=False)
-        files_to_write = tasks.do_capture(200, capture_record, "http://127.0.0.1", False)
+        files_to_write = tasks.do_capture(200, capture_record, "http://127.0.0.1:7001")
         self.assertEquals(files_to_write['html'], 'xkcd.com_1.html')
         self.assertEquals(files_to_write['sketch'], 'xkcd.com_1.png')
         self.assertEquals(files_to_write['scrape'], 'xkcd.com_1.txt')
@@ -127,7 +127,7 @@ class SketchApiTestCase(Sketch):
 
        rst = tasks.check_url.delay(capture_id=capture_record.id).get()
        self.assertEquals(rst, '200')
-   
+
     def test_token_valid(self):
         app.config.update(REQUIRE_AUTH=True, AUTH_TOKEN='test')
         code, data, headers = self.token_get('/api/v1.0/capture')
