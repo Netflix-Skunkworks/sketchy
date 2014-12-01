@@ -56,7 +56,7 @@ def check_url(capture_record):
     if the_code is None:
         capture_record.capture_status = 0
         return False
-    if the_code < 400:
+    if the_code < 400 or app.config['CAPTURE_ERRORS'] == True:
         capture_record.capture_status = the_code
         return True
     else:

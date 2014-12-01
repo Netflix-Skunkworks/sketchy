@@ -92,9 +92,10 @@ def app_key_check(view_function):
 flask_api = Api(app, decorators=[app_key_check])
 
 # Setup API calls for sketching pages
-from controllers.controller import CaptureView, CaptureViewList, Eager
+from controllers.controller import CaptureView, CaptureViewList, CaptureViewLast, Eager
 flask_api.add_resource(CaptureView, '/api/v1.0/capture/<int:id>')
 flask_api.add_resource(CaptureViewList, '/api/v1.0/capture')
+flask_api.add_resource(CaptureViewLast, '/api/v1.0/capture/last')
 flask_api.add_resource(Eager, '/eager')
 
 # Setup Screenshot directory

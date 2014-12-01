@@ -45,7 +45,8 @@ def check_url(self, capture_id=0, retries=0):
     # Only retrieve the headers of the request, and return respsone code
     try:
         response = ""
-        response = requests.get(capture_record.url, allow_redirects=False, headers={"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.9; rv:28.0) Gecko/20100101 Firefox/28.0"})
+        verify_ssl = app.config['SSL_HOST_VALIDATION']
+        response = requests.get(capture_record.url, verify=verify_ssl, allow_redirects=False, headers={"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.9; rv:28.0) Gecko/20100101 Firefox/28.0"})
         capture_record.url_response_code = response.status_code
         if capture_record.status_only:
             capture_record.job_status = 'COMPLETED'
@@ -204,10 +205,10 @@ def finisher(capture_record):
     POST finished chain to a callback URL provided
     """
     db.session.add(capture_record)
-
+    verify_ssl = app.config['SSL_HOST_VALIDATION']
     # Set the correct headers for the postback
     headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
-    req = post(capture_record.callback, verify=False, data=json.dumps(capture_record.as_dict()), headers=headers)
+    req = post(capture_record.callback, verify=verify_ssl, data=json.dumps(capture_record.as_dict()), headers=headers)
 
     # If a 4xx or 5xx status is recived, raise an exception
     req.raise_for_status()
@@ -231,8 +232,8 @@ def celery_capture(self, status_code, base_url, capture_id=0, retries=0):
     db.session.commit()
 
     try:
-        # If the the response code was an error, perform a callback or complete the task
-        if capture_record.url_response_code > 400:
+        # Perform a callback or complete the task depending on error code and config
+        if capture_record.url_response_code > 400 and app.config['CAPTURE_ERRORS'] == False:
             if capture_record.callback:
                 finisher(capture_record)
             else:

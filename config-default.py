@@ -15,7 +15,7 @@ import os
 
 _basedir = os.path.abspath(os.path.dirname(__file__))
 
-DEBUG = False
+DEBUG = True
 
 # Database setup
 SQLALCHEMY_DATABASE_URI = 'sqlite:////tmp/sketchy-db.db'
@@ -56,4 +56,7 @@ AUTH_TOKEN = os.getenv('auth_token', 'test')
 SKETCHY_LOG_FILE = "sketchy.log"
 
 # Perform SSL host validation (set to False if you want to scrape/screenshot sketchy websites)
-SSL_HOST_VALIDATION = True
+SSL_HOST_VALIDATION = False
+
+# Enable this option to screenshot webpages that generate 4xx or 5xx HTTP error codes
+CAPTURE_ERRORS = True

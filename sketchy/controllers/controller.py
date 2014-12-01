@@ -20,6 +20,7 @@ from flask import send_from_directory
 from flask.ext.restful import Resource, reqparse
 from celery import chain
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy import desc
 # Request parser for API calls to Payload model
 JSONPARSER = reqparse.RequestParser()
 JSONPARSER.add_argument('url', type=str, required=True, help="URL Cannot Be Blank", location='json')
@@ -49,6 +50,42 @@ class CaptureView(Resource):
             return 'No capture found!', 404
 
 
+class CaptureViewLast(Resource):
+    """
+    API Provides last capture in database.  
+
+    Methods:
+    GET
+    """
+    def get(self):
+        """
+        Retrieve Captures based on id
+        """
+        capture_record = Capture.query.order_by('-id').first()
+
+        if capture_record is not None:
+            return capture_record.as_dict()
+        else:
+            return 'No capture found!', 404
+
+class CaptureStatic(Resource):
+    """
+    API Provides last capture in database.  
+
+    Methods:
+    GET
+    """
+    def post(self):
+        """
+        Retrieve Captures based on id
+        """
+        capture_record = Capture.query.order_by('-id').first()
+
+        if capture_record is not None:
+            return capture_record.as_dict()
+        else:
+            return 'No capture found!', 404
+
 class CaptureViewList(Resource):
     """
     API Provides CRUD operations for Capturees.
@@ -62,7 +99,7 @@ class CaptureViewList(Resource):
         Retrieve all sketch records the database
         """
         results = []
-        for row in Capture.query.all():
+        for row in Capture.query.order_by(Capture.id.desc()).all():
             results.append(row.as_dict())
 
         return results
