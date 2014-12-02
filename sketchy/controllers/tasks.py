@@ -18,6 +18,7 @@ import os
 import re
 import json
 import requests
+from requests.exceptions import ConnectionError
 
 from requests import post
 from boto.s3.key import Key
@@ -26,6 +27,7 @@ from subprocess32 import PIPE
 from collections import defaultdict
 from sketchy import db, app, celery
 from sketchy.models.capture import Capture
+from sketchy.models.static import Static
 from sketchy.controllers.validators import grab_domain
 import subprocess32
 
@@ -58,7 +60,7 @@ def check_url(self, capture_id=0, retries=0):
     # If URL doesn't return a valid status code or times out, raise an exception
     except Exception as err:
         capture_record.job_status = 'RETRY'
-        capture_record.capture_status = str(err.message)
+        capture_record.capture_status = str(err)
         capture_record.url_response_code = 0
 
         check_url.retry(kwargs={'capture_id': capture_id, 'retries': capture_record.retry + 1}, exc=err, countdown=app.config['COOLDOWN'], max_retries=app.config['MAX_RETRIES'])
@@ -67,6 +69,82 @@ def check_url(self, capture_id=0, retries=0):
     finally:
         db.session.commit()
     return str(response.status_code)
+
+
+def do_static_capture(static_record, base_url):
+    """
+    Create a screenshot, text scrape, from a provided html file.
+
+    This depends on phantomjs and an associated javascript file to perform the captures.
+    In the event an error occurs, an exception is raised and handled by the celery task
+    or the controller that called this method.
+    """
+    # Make sure the capture_record
+    db.session.add(static_record)
+    static_name = static_record.filename
+    service_args = [
+        app.config['PHANTOMJS'],
+        '--ssl-protocol=any',
+        '--ignore-ssl-errors=yes',
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__))) + '/assets/static.js',
+        app.config['LOCAL_STORAGE_FOLDER'],
+        static_record.filename]
+
+    # Using subprocess32 backport, call phantom and if process hangs kill it
+    pid = subprocess32.Popen(service_args, stdout=PIPE, stderr=PIPE)
+    try:
+
+        stdout, stderr = pid.communicate(timeout=35)
+    except subprocess32.TimeoutExpired:
+        pid.kill()
+        stdout, stderr = pid.communicate()
+        app.logger.error('PhantomJS Static Capture timeout')
+        raise Exception('PhantomJS Static Capture timeout')
+
+    # If the subprocess has an error, raise an exception
+    if stderr or stdout:
+        raise Exception(stderr)
+
+    # Strip tags and parse out all text
+    ignore_tags = ('script', 'noscript', 'style')
+    with open(os.path.join(app.config['LOCAL_STORAGE_FOLDER'], static_record.filename), 'r') as content_file:
+        content = content_file.read()
+    cleaner = clean.Cleaner()
+    content = cleaner.clean_html(content)
+    doc = LH.fromstring(content)
+    output = ""
+    for elt in doc.iterdescendants():
+        if elt.tag in ignore_tags:
+            continue
+        text = elt.text or ''
+        tail = elt.tail or ''
+        wordz = " ".join((text, tail)).strip('\t')
+        if wordz and len(wordz) >= 2 and not re.match("^[ \t\n]*$", wordz):
+            output += wordz.encode('utf-8')
+
+    # Wite our html text that was parsed into our capture folder
+    parsed_text = open(os.path.join(app.config['LOCAL_STORAGE_FOLDER'], static_name.split('.')[0] + '.txt'), 'wb')
+    parsed_text.write(output)
+
+    # Update the sketch record with the local URLs for the sketch, scrape, and html captures
+    static_record.sketch_url = base_url + '/files/' + static_name.split('.')[0] + '.png'
+    static_record.scrape_url = base_url + '/files/' + static_name.split('.')[0] + '.txt'
+    static_record.html_url = base_url + '/files/' + static_name.split('.')[0] + '.html'
+
+    # Create a dict that contains what files may need to be written to S3
+    files_to_write = defaultdict(list)
+    files_to_write['sketch'] = static_name.split('.')[0] + '.png'
+    files_to_write['scrape'] = static_name.split('.')[0] + '.txt'
+    files_to_write['html'] = static_name.split('.')[0] + '.html'
+
+    # If we are not writing to S3, update the capture_status that we are completed.
+    if not app.config['USE_S3']:
+        static_record.job_status = "COMPLETED"
+        static_record.capture_status = "LOCAL_CAPTURES_CREATED"
+    else:
+        static_record.capture_status = "LOCAL_CAPTURES_CREATED"
+    db.session.commit()
+    return files_to_write
 
 
 def do_capture(status_code, capture_record, base_url):
@@ -146,11 +224,11 @@ def do_capture(status_code, capture_record, base_url):
     return files_to_write
 
 
-def s3_save(files_to_write, capture_record):
+def s3_save(files_to_write, the_record):
     """
     Write a sketch, scrape, and html file to S3
     """
-    db.session.add(capture_record)
+    db.session.add(the_record)
     # These are the content-types for the files S3 will be serving up
     reponse_types = {'sketch': 'image/png', 'scrape': 'text/plain', 'html': 'text/html'}
 
@@ -159,7 +237,7 @@ def s3_save(files_to_write, capture_record):
         # Connect to S3, generate Key, set path based on capture_type, write file to S3
         conn = boto.connect_s3(calling_format=OrdinaryCallingFormat())
         key = Key(conn.get_bucket(app.config.get('S3_BUCKET_PREFIX')))
-        path = "sketchy/{}/{}".format(capture_type, capture_record.id)
+        path = "sketchy/{}/{}".format(capture_type, the_record.id)
         key.key = path
         key.set_contents_from_filename(app.config['LOCAL_STORAGE_FOLDER'] + '/' + file_name)
 
@@ -176,51 +254,95 @@ def s3_save(files_to_write, capture_record):
 
         # Generate appropriate url based on capture_type
         if capture_type == 'sketch':
-            capture_record.sketch_url = str(url)
-            # print capture_record.sketch_url
+            the_record.sketch_url = str(url)
         if capture_type == 'scrape':
-            capture_record.scrape_url = str(url)
-            # print capture_record.scrape_url
+            the_record.scrape_url = str(url)
         if capture_type == 'html':
-            capture_record.html_url = str(url)
-            # print capture_record.html_url
+            the_record.html_url = str(url)
 
     # Remove local files if we are saving to S3
     os.remove(os.path.join(app.config['LOCAL_STORAGE_FOLDER'], files_to_write['sketch']))
     os.remove(os.path.join(app.config['LOCAL_STORAGE_FOLDER'], files_to_write['scrape']))
     os.remove(os.path.join(app.config['LOCAL_STORAGE_FOLDER'], files_to_write['html']))
 
-    # If we don't have a finisher we are donezo
-    # TYPO********
-    if capture_record.callback:
-        capture_record.capture_status = 'S3_ITEMS_SAVED'
+    # If we don't have a finisher task is complete
+    if the_record.callback:
+        the_record.capture_status = 'S3_ITEMS_SAVED'
     else:
-        capture_record.capture_status = 'S3_ITEMS_SAVED'
-        capture_record.job_status = 'COMPLETED'
+        the_record.capture_status = 'S3_ITEMS_SAVED'
+        the_record.job_status = 'COMPLETED'
     db.session.commit()
 
 
-def finisher(capture_record):
+def finisher(the_record):
     """
     POST finished chain to a callback URL provided
     """
-    db.session.add(capture_record)
+    db.session.add(the_record)
     verify_ssl = app.config['SSL_HOST_VALIDATION']
     # Set the correct headers for the postback
-    headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
-    req = post(capture_record.callback, verify=verify_ssl, data=json.dumps(capture_record.as_dict()), headers=headers)
+    headers = {'Content-type': 'application/json', 'Accept': 'text/plain', 'Connection': 'close'}
+    #proxy = {"http": "127.0.0.1:8080"}
+
+    req = post(the_record.callback, verify=verify_ssl, data=json.dumps(the_record.as_dict()), headers=headers)
 
     # If a 4xx or 5xx status is recived, raise an exception
     req.raise_for_status()
 
     # Update capture_record and save to database
-    capture_record.job_status = 'COMPLETED'
-    db.session.add(capture_record)
+    the_record.job_status = 'COMPLETED'
+    db.session.add(the_record)
     db.session.commit()
 
+@celery.task(name='celery_static_capture', ignore_result=True, bind=True)
+def celery_static_capture(self, base_url, capture_id=0, retries=0, model="static"):
+    """
+    Celery task used to create sketch, scrape, html.
+    Task also writes files to S3 or posts a callback depending on configuration file.
+    """
+    static_record = Static.query.filter(Static.id == capture_id).first()
+
+    # Write the number of retries to the capture record
+    db.session.add(static_record)
+    static_record.retry = retries
+    db.session.commit()
+
+    # First perform the captures, then either write to S3, perform a callback, or neither
+    try:
+        # call the main capture function to retrieve sketches, scrapes, and html
+        files_to_write = do_static_capture(static_record, base_url)
+        # Call the s3 save funciton if s3 is configured, and perform callback if configured.
+        if app.config['USE_S3']:
+            if static_record.callback:
+                s3_save(files_to_write, static_record)
+                finisher(static_record)
+            else:
+                s3_save(files_to_write, static_record)
+        elif static_record.callback:
+                finisher(static_record)
+    except ConnectionError as err:
+        app.logger.error(type(err))
+        static_record.job_status = 'RETRY'
+        static_record.capture_status = str(err)
+
+        static_record.retry = retries + 1
+        db.session.commit()
+        raise celery_static_capture.retry(args=[base_url],
+            kwargs={'capture_id' :capture_id, 'retries': static_record.retry + 1, 'model': 'static'}, exc=err,
+            countdown=app.config['COOLDOWN'],
+            max_retries=app.config['MAX_RETRIES'])
+    # Catch exceptions raised by any functions called
+    except Exception as err:
+        app.logger.error()
+        static_record.job_status = 'FAILURE'
+        static_record.capture_status = str(err)
+        db.session.commit()
+
+    finally:
+        db.session.commit()
 
 @celery.task(name='celery_capture', ignore_result=True, bind=True)
-def celery_capture(self, status_code, base_url, capture_id=0, retries=0):
+def celery_capture(self, status_code, base_url, capture_id=0, retries=0, model="capture"):
     """
     Celery task used to create sketch, scrape, html.
     Task also writes files to S3 or posts a callback depending on configuration file.
@@ -239,15 +361,19 @@ def celery_capture(self, status_code, base_url, capture_id=0, retries=0):
             else:
                 capture_record.job_status = 'COMPLETED'
             return True
-    except Exception as err:
+    except ConnectionError as err:
         app.logger.error(err)
         capture_record.job_status = 'RETRY'
         capture_record.capture_status = str(err)
         capture_record.retry = retries + 1
         raise celery_capture.retry(args=[status_code, base_url],
-            kwargs = { 'capture_id' :capture_id, 'retries': capture_record.retry + 1}, exc=err,
+            kwargs = { 'capture_id' :capture_id, 'retries': capture_record.retry + 1, 'model': 'capture'}, exc=err,
             countdown=app.config['COOLDOWN'],
-            max_retries=app.config['MAX_RETRIES'])
+            max_retries=app.config['MAX_RETRIES'])        
+    except Exception as err:
+        app.logger.error(err)
+        capture_record.job_status = 'FAILURE'
+        capture_record.capture_status = str(err)
     finally:
         db.session.commit()
     # First perform the captures, then either write to S3, perform a callback, or neither
@@ -265,7 +391,7 @@ def celery_capture(self, status_code, base_url, capture_id=0, retries=0):
                 finisher(capture_record)
 
     # Catch exceptions raised by any functions called
-    except Exception as err:
+    except ConnectionError as err:
         app.logger.error(err)
         capture_record.job_status = 'RETRY'
         capture_record.capture_status = str(err)
@@ -274,5 +400,9 @@ def celery_capture(self, status_code, base_url, capture_id=0, retries=0):
             kwargs={'capture_id' :capture_id, 'retries': capture_record.retry + 1}, exc=err,
             countdown=app.config['COOLDOWN'],
             max_retries=app.config['MAX_RETRIES'])
+    except Exception as err:
+        app.logger.error(err)
+        capture_record.job_status = 'FAILURE'
+        capture_record.capture_status = str(err)
     finally:
         db.session.commit()

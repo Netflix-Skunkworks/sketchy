@@ -44,8 +44,8 @@ PHANTOMJS = '/usr/local/bin/phantomjs'
 
 # S3 Specific configurations
 # This will store your sketches, scrapes, and html in an S3 bucket
-USE_S3 = False
-S3_BUCKET_PREFIX = 'your_bucket.s3.here.test'
+USE_S3 = True
+S3_BUCKET_PREFIX = 'netflix.s3.genpop.test'
 S3_LINK_EXPIRATION = 6000000
 
 # Token Auth Setup

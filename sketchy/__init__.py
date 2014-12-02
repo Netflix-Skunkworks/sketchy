@@ -26,7 +26,7 @@ from flask import Flask, send_from_directory, request, abort
 from sqlalchemy.exc import IntegrityError
 from sketchy.loggers import sketchy_logger
 from logging.handlers import RotatingFileHandler
-
+from werkzeug import secure_filename
 # App Config
 app = Flask(__name__)
 # Specify which config file to load (config-test or config-default)
@@ -36,6 +36,8 @@ sketchy_logger(app)
 
 # Model Imports
 from sketchy.models.capture import Capture
+from sketchy.models.static import Static
+
 def make_celery(app):
     """Make a celery object that extends Flask context."""
     celery = Celery(app.import_name, broker=app.config['CELERY_BROKER_URL'])
@@ -54,17 +56,20 @@ def make_celery(app):
         def on_failure(self, exc, task_id, args, kwargs, einfo):
             from sketchy.controllers.tasks import finisher
             try:
-                capture_record = Capture.query.filter(Capture.id == kwargs['capture_id']).first()
-                capture_record.job_status = 'FAILURE'
+                if kwargs['model'] == 'capture':
+                    the_record = Capture.query.filter(Capture.id == kwargs['capture_id']).first()
+                else:
+                    the_record = Static.query.filter(Static.id == kwargs['capture_id']).first()
+                the_record.job_status = 'FAILURE'
+                the_record.capture_status = str(exc)
                 app.logger.error(exc)
-
-                db.session.add(capture_record)
+                db.session.add(the_record)
                 db.session.commit()
             except IntegrityError, exc:
                 app.logger.error(exc)
 
-            if capture_record and capture_record.callback:
-                finisher(capture_record)
+            if the_record and the_record.callback:
+                finisher(the_record)
 
     celery.Task = ContextTask
     return celery
@@ -91,12 +96,15 @@ def app_key_check(view_function):
 # If Token Auth is required, apply to Flask API
 flask_api = Api(app, decorators=[app_key_check])
 
-# Setup API calls for sketching pages
+# Setup API calls for sketching urls or html files
 from controllers.controller import CaptureView, CaptureViewList, CaptureViewLast, Eager
+from controllers.static_upload import StaticView, StaticViewList
 flask_api.add_resource(CaptureView, '/api/v1.0/capture/<int:id>')
 flask_api.add_resource(CaptureViewList, '/api/v1.0/capture')
 flask_api.add_resource(CaptureViewLast, '/api/v1.0/capture/last')
 flask_api.add_resource(Eager, '/eager')
+flask_api.add_resource(StaticView, '/api/v1.0/static/<int:id>')
+flask_api.add_resource(StaticViewList, '/api/v1.0/static')
 
 # Setup Screenshot directory
 if not os.path.exists(app.config['LOCAL_STORAGE_FOLDER']):
@@ -117,4 +125,3 @@ def uploaded_file(filename):
 if __name__ == '__main__':
     PORT = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=PORT)
-

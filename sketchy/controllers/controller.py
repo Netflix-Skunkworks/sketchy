@@ -135,7 +135,7 @@ class CaptureViewList(Resource):
             # If the application is configured for S3 store contents in a bucket
             # This will first check if URL is valid, then sketch, scrape, and store files
             celery_sketch = chain(tasks.check_url.s(capture_id=capture_record.id),
-                                  tasks.celery_capture.s(base_url, capture_id=capture_record.id)
+                                  tasks.celery_capture.s(base_url, capture_id=capture_record.id, model='capture')
                                   ).apply_async()
 
         # Commit all changes to DB and return JSON
