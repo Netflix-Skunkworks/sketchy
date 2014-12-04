@@ -24,6 +24,8 @@ A number of improvements and bug fixes have been made:
 - API list view is now reverse sorted so most recent capture is listed on the top of the page.
 - For callback requests, capture status is now updated
 - Task retry has been optimitzed to only retry on ConnectionErrors.  This should speedup errors that would never succeed during a retry.
+- A new configuration setting "SSL\_HOST\_VALIDATION" can be set to scrape/screenshot webpages with SSL errors.
+- A new configuration setting "CAPTURE_ERRORS" can be used to scrape/screenshot webpages that have 4xx or 5xx http status codes.
 
 #Documentation#
 
