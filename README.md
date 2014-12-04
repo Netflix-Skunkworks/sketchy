@@ -15,6 +15,7 @@ Sketchy utilizes PhantomJS with [lazy-rendering](https://github.com/kimmobrunfel
 ## Release History ##
 
 **Version 1.1** - *December 4, 2014*
+
 A number of improvements and bug fixes have been made:
 
 - A new model and API endpoint called "Static" was created.  This allows users to send Sketchy a static HTML file for text scraping and screenshoting.  See the [Wiki](https://github.com/Netflix/Sketchy/wiki) for usage information.  
