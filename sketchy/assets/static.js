@@ -86,7 +86,6 @@ var Page = (function(opts) {
 
     function renderAndExit() {
         page.render(opts.file);
-        //fs.write(opts.file + '.html', page.content)
         phantom.exit();
     }
 
