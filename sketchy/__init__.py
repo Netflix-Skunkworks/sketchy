@@ -55,13 +55,15 @@ def make_celery(app):
 
         def on_failure(self, exc, task_id, args, kwargs, einfo):
             from sketchy.controllers.tasks import finisher
+            # Check if the failures was on a capture or a static capture
             try:
                 if kwargs['model'] == 'capture':
                     the_record = Capture.query.filter(Capture.id == kwargs['capture_id']).first()
                 else:
                     the_record = Static.query.filter(Static.id == kwargs['capture_id']).first()
                 the_record.job_status = 'FAILURE'
-                the_record.capture_status = str(exc)
+                if str(exc):
+                    the_record.capture_status = str(exc)
                 app.logger.error(exc)
                 db.session.add(the_record)
                 db.session.commit()

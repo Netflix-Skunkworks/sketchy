@@ -70,8 +70,7 @@ def check_url(self, capture_id=0, retries=0):
         db.session.commit()
     return str(response.status_code)
 
-
-def do_static_capture(static_record, base_url):
+def do_capture(status_code, the_record, base_url, model='capture'):
     """
     Create a screenshot, text scrape, from a provided html file.
 
@@ -79,17 +78,30 @@ def do_static_capture(static_record, base_url):
     In the event an error occurs, an exception is raised and handled by the celery task
     or the controller that called this method.
     """
-    # Make sure the capture_record
-    db.session.add(static_record)
-    static_name = static_record.filename
-    service_args = [
-        app.config['PHANTOMJS'],
-        '--ssl-protocol=any',
-        '--ignore-ssl-errors=yes',
-        os.path.dirname(os.path.dirname(os.path.abspath(__file__))) + '/assets/static.js',
-        app.config['LOCAL_STORAGE_FOLDER'],
-        static_record.filename]
+    # Make sure the the_record
+    db.session.add(the_record)
+    # If the capture is for static content, use a differnet PhantomJS config file
+    if model == 'static':
+        capture_name = the_record.filename
+        service_args = [
+            app.config['PHANTOMJS'],
+            '--ssl-protocol=any',
+            '--ignore-ssl-errors=yes',
+            os.path.dirname(os.path.dirname(os.path.abspath(__file__))) + '/assets/static.js',
+            app.config['LOCAL_STORAGE_FOLDER'],
+            capture_name]
+        content_to_parse = os.path.join(app.config['LOCAL_STORAGE_FOLDER'], capture_name)
+    else:
+        capture_name = grab_domain(the_record.url) + '_' + str(the_record.id)
+        service_args = [
+            app.config['PHANTOMJS'],
+            '--ssl-protocol=any',
+            '--ignore-ssl-errors=yes',
+            os.path.dirname(os.path.dirname(os.path.abspath(__file__))) + '/assets/capture.js',
+            the_record.url,
+        os.path.join(app.config['LOCAL_STORAGE_FOLDER'], capture_name)]
 
+        content_to_parse = os.path.join(app.config['LOCAL_STORAGE_FOLDER'], capture_name + '.html')
     # Using subprocess32 backport, call phantom and if process hangs kill it
     pid = subprocess32.Popen(service_args, stdout=PIPE, stderr=PIPE)
     try:
@@ -107,7 +119,7 @@ def do_static_capture(static_record, base_url):
 
     # Strip tags and parse out all text
     ignore_tags = ('script', 'noscript', 'style')
-    with open(os.path.join(app.config['LOCAL_STORAGE_FOLDER'], static_record.filename), 'r') as content_file:
+    with open(content_to_parse, 'r') as content_file:
         content = content_file.read()
     cleaner = clean.Cleaner()
     content = cleaner.clean_html(content)
@@ -121,92 +133,20 @@ def do_static_capture(static_record, base_url):
         wordz = " ".join((text, tail)).strip('\t')
         if wordz and len(wordz) >= 2 and not re.match("^[ \t\n]*$", wordz):
             output += wordz.encode('utf-8')
-
-    # Wite our html text that was parsed into our capture folder
-    parsed_text = open(os.path.join(app.config['LOCAL_STORAGE_FOLDER'], static_name.split('.')[0] + '.txt'), 'wb')
-    parsed_text.write(output)
-
-    # Update the sketch record with the local URLs for the sketch, scrape, and html captures
-    static_record.sketch_url = base_url + '/files/' + static_name.split('.')[0] + '.png'
-    static_record.scrape_url = base_url + '/files/' + static_name.split('.')[0] + '.txt'
-    static_record.html_url = base_url + '/files/' + static_name.split('.')[0] + '.html'
-
-    # Create a dict that contains what files may need to be written to S3
-    files_to_write = defaultdict(list)
-    files_to_write['sketch'] = static_name.split('.')[0] + '.png'
-    files_to_write['scrape'] = static_name.split('.')[0] + '.txt'
-    files_to_write['html'] = static_name.split('.')[0] + '.html'
-
-    # If we are not writing to S3, update the capture_status that we are completed.
-    if not app.config['USE_S3']:
-        static_record.job_status = "COMPLETED"
-        static_record.capture_status = "LOCAL_CAPTURES_CREATED"
-    else:
-        static_record.capture_status = "LOCAL_CAPTURES_CREATED"
-    db.session.commit()
-    return files_to_write
-
-
-def do_capture(status_code, capture_record, base_url):
-    """
-    Create a screenshot, text scrape, and html file for provided capture_record url.
-
-    This depends on phantomjs and an associated javascript file to perform the captures.
-    In the event an error occurs, an exception is raised and handled by the celery task
-    or the controller that called this method.
-
-    """
-    # Make sure the capture_record
-    db.session.add(capture_record)
-    capture_name = grab_domain(capture_record.url) + '_' + str(capture_record.id)
-    service_args = [
-        app.config['PHANTOMJS'],
-        '--ssl-protocol=any',
-        '--ignore-ssl-errors=yes',
-        os.path.dirname(os.path.dirname(os.path.abspath(__file__))) + '/assets/capture.js',
-        capture_record.url,
-        os.path.join(app.config['LOCAL_STORAGE_FOLDER'], capture_name)]
-
-    # Using subprocess32 backport, call phantom and if process hangs kill it
-    pid = subprocess32.Popen(service_args, stdout=PIPE, stderr=PIPE)
-    try:
-        stdout, stderr = pid.communicate(timeout=35)
-    except subprocess32.TimeoutExpired:
-        pid.kill()
-        stdout, stderr = pid.communicate()
-        app.logger.error('PhantomJS Capture timeout')
-        raise Exception('PhantomJS Capture timeout')
-
-    # If the subprocess has an error, raise an exception
-    if stderr or stdout:
-        raise Exception(stderr)
-
-    # Strip tags and parse out all text
-    ignore_tags = ('script', 'noscript', 'style')
-    with open(os.path.join(app.config['LOCAL_STORAGE_FOLDER'], capture_name + '.html'), 'r') as content_file:
-        content = content_file.read()
-    cleaner = clean.Cleaner()
-    content = cleaner.clean_html(content)
-    doc = LH.fromstring(content)
-    output = ""
-    for elt in doc.iterdescendants():
-        if elt.tag in ignore_tags:
-            continue
-        text = elt.text or ''
-        tail = elt.tail or ''
-        wordz = " ".join((text, tail)).strip('\t')
-
-        if wordz and len(wordz) >= 2 and not re.match("^[ \t\n]*$", wordz):
-            output += wordz.encode('utf-8')
-
+   
+    # Since the filename format is different for static captures, update the filename
+    # This will ensure the URLs are pointing to the correct resources
+    if model == 'static':
+        capture_name = capture_name.split('.')[0]
+        
     # Wite our html text that was parsed into our capture folder
     parsed_text = open(os.path.join(app.config['LOCAL_STORAGE_FOLDER'], capture_name + '.txt'), 'wb')
     parsed_text.write(output)
 
     # Update the sketch record with the local URLs for the sketch, scrape, and html captures
-    capture_record.sketch_url = base_url + '/files/' + capture_name + '.png'
-    capture_record.scrape_url = base_url + '/files/' + capture_name + '.txt'
-    capture_record.html_url = base_url + '/files/' + capture_name + '.html'
+    the_record.sketch_url = base_url + '/files/' + capture_name + '.png'
+    the_record.scrape_url = base_url + '/files/' + capture_name + '.txt'
+    the_record.html_url = base_url + '/files/' + capture_name + '.html'
 
     # Create a dict that contains what files may need to be written to S3
     files_to_write = defaultdict(list)
@@ -216,10 +156,10 @@ def do_capture(status_code, capture_record, base_url):
 
     # If we are not writing to S3, update the capture_status that we are completed.
     if not app.config['USE_S3']:
-        capture_record.job_status = "COMPLETED"
-        capture_record.capture_status = "LOCAL_CAPTURES_CREATED"
+        the_record.job_status = "COMPLETED"
+        the_record.capture_status = "LOCAL_CAPTURES_CREATED"
     else:
-        capture_record.capture_status = "LOCAL_CAPTURES_CREATED"
+        the_record.capture_status = "LOCAL_CAPTURES_CREATED"
     db.session.commit()
     return files_to_write
 
@@ -291,13 +231,14 @@ def finisher(the_record):
 
     # Update capture_record and save to database
     the_record.job_status = 'COMPLETED'
+    the_record.capture_status = 'CALLBACK_SUCCEEDED'
     db.session.add(the_record)
     db.session.commit()
 
 @celery.task(name='celery_static_capture', ignore_result=True, bind=True)
 def celery_static_capture(self, base_url, capture_id=0, retries=0, model="static"):
     """
-    Celery task used to create sketch, scrape, html.
+    Celery task used to create a sketch and scrape with a provided static HTML file.
     Task also writes files to S3 or posts a callback depending on configuration file.
     """
     static_record = Static.query.filter(Static.id == capture_id).first()
@@ -309,8 +250,8 @@ def celery_static_capture(self, base_url, capture_id=0, retries=0, model="static
 
     # First perform the captures, then either write to S3, perform a callback, or neither
     try:
-        # call the main capture function to retrieve sketches, scrapes, and html
-        files_to_write = do_static_capture(static_record, base_url)
+        # call the main capture function to retrieve sketches and scrapes
+        files_to_write = do_capture(0, static_record, base_url, model='static')
         # Call the s3 save funciton if s3 is configured, and perform callback if configured.
         if app.config['USE_S3']:
             if static_record.callback:
@@ -320,8 +261,9 @@ def celery_static_capture(self, base_url, capture_id=0, retries=0, model="static
                 s3_save(files_to_write, static_record)
         elif static_record.callback:
                 finisher(static_record)
+    # Only execute retries on ConnectionError exceptions, otherwise fail immediatley
     except ConnectionError as err:
-        app.logger.error(type(err))
+        app.logger.error(err)
         static_record.job_status = 'RETRY'
         static_record.capture_status = str(err)
 
@@ -333,11 +275,11 @@ def celery_static_capture(self, base_url, capture_id=0, retries=0, model="static
             max_retries=app.config['MAX_RETRIES'])
     # Catch exceptions raised by any functions called
     except Exception as err:
-        app.logger.error()
+        app.logger.error(err)
         static_record.job_status = 'FAILURE'
-        static_record.capture_status = str(err)
-        db.session.commit()
-
+        if str(err):
+            static_record.capture_status = str(err)
+        raise Exception
     finally:
         db.session.commit()
 
@@ -361,6 +303,7 @@ def celery_capture(self, status_code, base_url, capture_id=0, retries=0, model="
             else:
                 capture_record.job_status = 'COMPLETED'
             return True
+    # Only execute retries on ConnectionError exceptions, otherwise fail immediatley
     except ConnectionError as err:
         app.logger.error(err)
         capture_record.job_status = 'RETRY'
@@ -373,13 +316,15 @@ def celery_capture(self, status_code, base_url, capture_id=0, retries=0, model="
     except Exception as err:
         app.logger.error(err)
         capture_record.job_status = 'FAILURE'
+        if str(err):
+            capture_record.capture_status = str(err)
         capture_record.capture_status = str(err)
     finally:
         db.session.commit()
     # First perform the captures, then either write to S3, perform a callback, or neither
     try:
         # call the main capture function to retrieve sketches, scrapes, and html
-        files_to_write = do_capture(status_code, capture_record, base_url)
+        files_to_write = do_capture(status_code, capture_record, base_url, model='capture')
         # Call the s3 save funciton if s3 is configured, and perform callback if configured.
         if app.config['USE_S3']:
             if capture_record.callback:
@@ -390,19 +335,22 @@ def celery_capture(self, status_code, base_url, capture_id=0, retries=0, model="
         elif capture_record.callback:
                 finisher(capture_record)
 
-    # Catch exceptions raised by any functions called
+    # Only execute retries on ConnectionError exceptions, otherwise fail immediatley
     except ConnectionError as err:
         app.logger.error(err)
         capture_record.job_status = 'RETRY'
         capture_record.capture_status = str(err)
         capture_record.retry = retries + 1
         raise celery_capture.retry(args=[status_code, base_url],
-            kwargs={'capture_id' :capture_id, 'retries': capture_record.retry + 1}, exc=err,
+            kwargs={'capture_id' :capture_id, 'retries': capture_record.retry + 1, 'model': 'capture'}, exc=err,
             countdown=app.config['COOLDOWN'],
             max_retries=app.config['MAX_RETRIES'])
+    # For all other exceptions, fail immediately
     except Exception as err:
         app.logger.error(err)
+        if str(err):
+            capture_record.capture_status = str(err)
         capture_record.job_status = 'FAILURE'
-        capture_record.capture_status = str(err)
+        raise Exception
     finally:
         db.session.commit()

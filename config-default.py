@@ -27,8 +27,11 @@ SQLALCHEMY_DATABASE_URI = 'sqlite:////tmp/sketchy-db.db'
 BASE_URL = 'http://%s' % os.getenv('host', '127.0.0.1:8000')
 
 # Broker configuration information, currently only supporting Redis
-CELERY_BROKER_URL = 'redis://localhost:6379'
-CELERY_RESULT_BACKEND = 'redis://localhost:6379'
+# CELERY_BROKER_URL = 'redis://localhost:6379'
+# CELERY_RESULT_BACKEND = 'redis://localhost:6379'
+
+CELERY_BROKER_URL = 'amqp://guest@localhost//'
+CELERY_RESULT_BACKEND = 'amqp://guest@localhost//'
 
 # Local Screenshot storage
 LOCAL_STORAGE_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'files')
