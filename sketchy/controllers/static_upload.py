@@ -43,6 +43,23 @@ class StaticView(Resource):
         else:
             return 'No static capture found!', 404
 
+class StaticViewLast(Resource):
+    """
+    API Provides last static capture in database.
+
+    Methods:
+    GET
+    """
+    def get(self):
+        """
+        Retrieve Static based on id
+        """
+        static_record = Static.query.order_by('-id').first()
+
+        if static_record is not None:
+            return static_record.as_dict()
+        else:
+            return 'No static record found!', 404
 
 class StaticViewList(Resource):
     """

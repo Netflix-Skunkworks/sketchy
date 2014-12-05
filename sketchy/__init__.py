@@ -100,13 +100,14 @@ flask_api = Api(app, decorators=[app_key_check])
 
 # Setup API calls for sketching urls or html files
 from controllers.controller import CaptureView, CaptureViewList, CaptureViewLast, Eager
-from controllers.static_upload import StaticView, StaticViewList
+from controllers.static_upload import StaticView, StaticViewList, StaticViewLast
 flask_api.add_resource(CaptureView, '/api/v1.0/capture/<int:id>')
 flask_api.add_resource(CaptureViewList, '/api/v1.0/capture')
 flask_api.add_resource(CaptureViewLast, '/api/v1.0/capture/last')
 flask_api.add_resource(Eager, '/eager')
 flask_api.add_resource(StaticView, '/api/v1.0/static/<int:id>')
 flask_api.add_resource(StaticViewList, '/api/v1.0/static')
+flask_api.add_resource(StaticViewLast, '/api/v1.0/static/last')
 
 # Setup Screenshot directory
 if not os.path.exists(app.config['LOCAL_STORAGE_FOLDER']):
