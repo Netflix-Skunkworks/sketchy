@@ -161,7 +161,7 @@ class Eager(Resource):
         args = EAGERPARSER.parse_args()
         base_url = app.config['BASE_URL']
 
-        app.config.update(USE_S3=False)
+        app.config.update(USE_S3='')
         # Parse out url and capture type
         capture_record = Capture()
         capture_record.url = args["url"]
