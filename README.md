@@ -21,6 +21,7 @@ A number of improvements and bug fixes have been made:
 - A new model and API endpoint called "Static" was created.  This allows users to send Sketchy a static HTML file for text scraping and screenshoting.  See the [Wiki](https://github.com/Netflix/Sketchy/wiki) for usage information.  
 - New PhantomJS script called 'static.js' for creating screenshots of static html files.  
 - Creation of a new endpont: api/v1.0/capture/last which shows the last capture that was taken.  
+- Creation of a new endpont: api/v1.0/static/last which shows the last static capture that was taken.  
 - API list view is now reverse sorted so most recent capture is listed on the top of the page.
 - For callback requests, capture status is now updated
 - Task retry has been optimitzed to only retry on ConnectionErrors.  This should speedup errors that would never succeed during a retry.
