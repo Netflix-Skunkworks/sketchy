@@ -18,7 +18,7 @@ _basedir = os.path.abspath(os.path.dirname(__file__))
 DEBUG = True
 
 # Database setup
-SQLALCHEMY_DATABASE_URI = 'sqlite:////tmp/sketchy-db.db'
+SQLALCHEMY_DATABASE_URI = os.getenv('sketchy_db', 'sqlite:////tmp/sketchy-db.db')
 
 # Set scheme and hostname:port of your server.
 # Alterntively, you can export the 'host' variable on your system to set the
@@ -44,8 +44,8 @@ PHANTOMJS = '/usr/local/bin/phantomjs'
 
 # S3 Specific configurations
 # This will store your sketches, scrapes, and html in an S3 bucket
-USE_S3 = True
-S3_BUCKET_PREFIX = 'netflix.s3.genpop.test'
+USE_S3 = os.getenv('use_s3', 'False')
+S3_BUCKET_PREFIX = os.getenv('bucket_prefix', '')
 S3_LINK_EXPIRATION = 6000000
 
 # Token Auth Setup
