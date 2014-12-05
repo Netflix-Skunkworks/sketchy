@@ -17,7 +17,7 @@ import multiprocessing
 
 setup(
     name='sketchy',
-    version='0.1',
+    version='1.1',
     long_description=__doc__,
     packages=['sketchy'],
     include_package_data=True,
