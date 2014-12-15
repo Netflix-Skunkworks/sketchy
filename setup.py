@@ -25,6 +25,7 @@ setup(
     install_requires=[
             'Flask==0.10.1',
             'Flask-SQLAlchemy==1.0',
+            'MySQL-python==1.2.5',
             'Flask-Script==2.0.5',
             'SQLAlchemy==0.9.7',
             'Flask-RESTful==0.2.12',
