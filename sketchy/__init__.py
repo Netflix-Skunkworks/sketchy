@@ -123,7 +123,12 @@ def uploaded_file(filename):
     """
     return send_from_directory(app.config['LOCAL_STORAGE_FOLDER'],
                                filename, as_attachment=True)
-
+                               
+# Healthcheck 
+@app.route('/healthcheck')
+def home():
+    return 'Ok'
+    
 # Launch.
 if __name__ == '__main__':
     PORT = int(os.environ.get('PORT', 5000))
