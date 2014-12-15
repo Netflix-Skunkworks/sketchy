@@ -10,6 +10,19 @@ web:
    sketchy_db: postgresql://postgres:postgres@postgres:5432
    sketchy_broker_url: redis://redis:6379
    sketchy_result_backend: redis://redis:6379
+  volumes:
+    - .:/app/
+
+worker:
+  build: .
+  command: celery worker -A sketchy.celery
+  links:
+    - redis
+    - postgres
+  environment:
+   sketchy_db: postgresql://postgres:postgres@postgres:5432
+   sketchy_broker_url: redis://redis:6379
+   sketchy_result_backend: redis://redis:6379
    C_FORCE_ROOT: true
   volumes:
     - .:/app/
