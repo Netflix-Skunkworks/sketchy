@@ -44,7 +44,7 @@ PHANTOMJS = '/usr/local/bin/phantomjs'
 
 # S3 Specific configurations
 # This will store your sketches, scrapes, and html in an S3 bucket
-USE_S3 = os.getenv('use_s3', 'False')
+USE_S3 = os.getenv('use_s3', 'False').lower() == 'true'
 S3_BUCKET_PREFIX = os.getenv('bucket_prefix', '')
 S3_LINK_EXPIRATION = 6000000
 
