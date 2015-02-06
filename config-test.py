@@ -46,6 +46,7 @@ PHANTOMJS = '/usr/local/bin/phantomjs'
 USE_S3 = False
 S3_BUCKET_PREFIX = 'your_bucket.s3.here.test'
 S3_LINK_EXPIRATION = 6000000
+S3_BUCKET_REGION_NAME = 'us-east-1'
 
 # Token Auth Setup
 REQUIRE_AUTH = False
