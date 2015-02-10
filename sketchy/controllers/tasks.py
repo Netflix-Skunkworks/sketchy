@@ -175,7 +175,10 @@ def s3_save(files_to_write, the_record):
     # Iterate through each file we need to write to s3
     for capture_type, file_name in files_to_write.items():
         # Connect to S3, generate Key, set path based on capture_type, write file to S3
-        conn = boto.connect_s3(calling_format=OrdinaryCallingFormat())
+        conn = boto.s3.connect_to_region(
+            region_name = app.config.get('S3_BUCKET_REGION_NAME'),
+            calling_format = boto.s3.connection.OrdinaryCallingFormat()
+        )
         key = Key(conn.get_bucket(app.config.get('S3_BUCKET_PREFIX')))
         path = "sketchy/{}/{}".format(capture_type, the_record.id)
         key.key = path

@@ -47,6 +47,7 @@ PHANTOMJS = '/usr/local/bin/phantomjs'
 USE_S3 = os.getenv('use_s3', '')
 S3_BUCKET_PREFIX = os.getenv('bucket_prefix', '')
 S3_LINK_EXPIRATION = 6000000
+S3_BUCKET_REGION_NAME = os.getenv('bucket_region_name', '')
 
 # Token Auth Setup
 REQUIRE_AUTH = False
