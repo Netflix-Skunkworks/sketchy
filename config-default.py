@@ -50,7 +50,7 @@ S3_LINK_EXPIRATION = 6000000
 S3_BUCKET_REGION_NAME = os.getenv('bucket_region_name', 'us-east-1')
 
 # Token Auth Setup
-REQUIRE_AUTH = False
+REQUIRE_AUTH = os.getenv('require_auth', 'False').lower() == 'true'
 AUTH_TOKEN = os.getenv('auth_token', 'test')
 
 # Log file configuration (currently only logs errors)
