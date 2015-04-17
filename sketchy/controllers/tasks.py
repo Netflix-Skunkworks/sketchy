@@ -33,7 +33,7 @@ import subprocess32
 
 
 @celery.task(name='check_url', bind=True)
-def check_url(self, capture_id=0, retries=0):
+def check_url(self, capture_id=0, retries=0, model='capture'):
     """
     Check if a URL exists without downloading the whole file.
     We only check the URL header.
