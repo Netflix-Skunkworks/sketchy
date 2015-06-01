@@ -30,6 +30,7 @@ from sketchy.models.capture import Capture
 from sketchy.models.static import Static
 from sketchy.controllers.validators import grab_domain
 import subprocess32
+import calendar
 
 
 @celery.task(name='check_url', bind=True)
@@ -80,9 +81,15 @@ def do_capture(status_code, the_record, base_url, model='capture'):
     """
     # Make sure the the_record
     db.session.add(the_record)
+    
+    # Generate Unix Timestamp of capture date and append to the capture_name, to guarantee uniqueness.
+    from datetime import datetime
+    date = datetime.utcnow()
+    capture_date_unixtime = str(calendar.timegm(date.utctimetuple()))
+    
     # If the capture is for static content, use a differnet PhantomJS config file
     if model == 'static':
-        capture_name = the_record.filename
+        capture_name = the_record.filename + capture_date_unixtime
         service_args = [
             app.config['PHANTOMJS'],
             '--ssl-protocol=any',
@@ -92,7 +99,7 @@ def do_capture(status_code, the_record, base_url, model='capture'):
             capture_name]
         content_to_parse = os.path.join(app.config['LOCAL_STORAGE_FOLDER'], capture_name)
     else:
-        capture_name = grab_domain(the_record.url) + '_' + str(the_record.id)
+        capture_name = grab_domain(the_record.url) + '_' + str(the_record.id) + capture_date_unixtime
         service_args = [
             app.config['PHANTOMJS'],
             '--ssl-protocol=any',
