@@ -183,7 +183,8 @@ def s3_save(files_to_write, the_record):
         path = "sketchy/{}/{}".format(capture_type, the_record.id)
         key.key = path
         key.set_contents_from_filename(app.config['LOCAL_STORAGE_FOLDER'] + '/' + file_name)
-
+        # allow public read of S3 bucket assets
+        key.set_acl(app.config.get('S3_BUCKET_PUBLIC_READ'))
         # Generate a URL for downloading the files
         url = conn.generate_url(
             app.config.get('S3_LINK_EXPIRATION'),
