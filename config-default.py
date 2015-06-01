@@ -48,7 +48,7 @@ USE_S3 = os.getenv('use_s3', 'False').lower() == 'true'
 S3_BUCKET_PREFIX = os.getenv('bucket_prefix', '')
 S3_LINK_EXPIRATION = 6000000
 S3_BUCKET_REGION_NAME = os.getenv('bucket_region_name', 'us-east-1')
-
+S3_BUCKET_REGION_NAME = 'public-read'
 # Token Auth Setup
 REQUIRE_AUTH = os.getenv('require_auth', 'False').lower() == 'true'
 AUTH_TOKEN = os.getenv('auth_token', 'test')
