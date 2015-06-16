@@ -152,7 +152,7 @@ class Eager(Resource):
 
     Args:
     url = url to generate a text scrape.
-    type = ['sketch', 'scrape', 'html'] string to specifiy capture tyope
+    type = ['sketch', 'scrape', 'html'] string to specifiy capture type
     """
     def get(self):
         """

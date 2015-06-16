@@ -33,8 +33,11 @@ CELERY_RESULT_BACKEND = os.getenv('sketchy_result_backend', 'redis://localhost:6
 # Local Screenshot storage
 LOCAL_STORAGE_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'files')
 
+# Maximum time to wait for PhantomJS to generate a screenshot
+PHANTOMJS_TIMEOUT = 35
+
 # Maximum number of Celery Job retries on failure
-MAX_RETRIES = 1
+MAX_RETRIES = 3
 
 # Seconds to sleep before retrying the task
 COOLDOWN = 5

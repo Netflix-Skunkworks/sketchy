@@ -70,7 +70,7 @@ def check_url(self, capture_id=0, retries=0, model='capture'):
         db.session.commit()
     return str(response.status_code)
 
-def do_capture(status_code, the_record, base_url, model='capture'):
+def do_capture(status_code, the_record, base_url, model='capture', phantomjs_timeout=app.config['PHANTOMJS_TIMEOUT']):
     """
     Create a screenshot, text scrape, from a provided html file.
 
@@ -105,13 +105,12 @@ def do_capture(status_code, the_record, base_url, model='capture'):
     # Using subprocess32 backport, call phantom and if process hangs kill it
     pid = subprocess32.Popen(service_args, stdout=PIPE, stderr=PIPE)
     try:
-
-        stdout, stderr = pid.communicate(timeout=35)
+        stdout, stderr = pid.communicate(timeout=phantomjs_timeout)
     except subprocess32.TimeoutExpired:
         pid.kill()
         stdout, stderr = pid.communicate()
-        app.logger.error('PhantomJS Static Capture timeout')
-        raise Exception('PhantomJS Static Capture timeout')
+        app.logger.error('PhantomJS Capture timeout at {} seconds'.format(phantomjs_timeout))
+        raise subprocess32.TimeoutExpired('phantomjs capture',phantomjs_timeout)
 
     # If the subprocess has an error, raise an exception
     if stderr or stdout:
@@ -287,7 +286,7 @@ def celery_static_capture(self, base_url, capture_id=0, retries=0, model="static
         db.session.commit()
 
 @celery.task(name='celery_capture', ignore_result=True, bind=True)
-def celery_capture(self, status_code, base_url, capture_id=0, retries=0, model="capture"):
+def celery_capture(self, status_code, base_url, capture_id=0, retries=0, model="capture", phantomjs_timeout=app.config['PHANTOMJS_TIMEOUT']):
     """
     Celery task used to create sketch, scrape, html.
     Task also writes files to S3 or posts a callback depending on configuration file.
@@ -327,7 +326,7 @@ def celery_capture(self, status_code, base_url, capture_id=0, retries=0, model="
     # First perform the captures, then either write to S3, perform a callback, or neither
     try:
         # call the main capture function to retrieve sketches, scrapes, and html
-        files_to_write = do_capture(status_code, capture_record, base_url, model='capture')
+        files_to_write = do_capture(status_code, capture_record, base_url, model='capture', phantomjs_timeout=phantomjs_timeout)
         # Call the s3 save funciton if s3 is configured, and perform callback if configured.
         if app.config['USE_S3']:
             if capture_record.callback:
@@ -337,15 +336,24 @@ def celery_capture(self, status_code, base_url, capture_id=0, retries=0, model="
                 s3_save(files_to_write, capture_record)
         elif capture_record.callback:
                 finisher(capture_record)
-
-    # Only execute retries on ConnectionError exceptions, otherwise fail immediatley
+    # If the screenshot generation timed out, try to render again
+    except subprocess32.TimeoutExpired as err:
+        app.logger.error(err)
+        capture_record.job_status = 'RETRY'
+        capture_record.capture_status = str(err)
+        capture_record.retry = retries + 1
+        raise celery_capture.retry(args=[status_code, base_url],
+            kwargs={'capture_id' :capture_id, 'retries': capture_record.retry, 'model': 'capture', 'phantomjs_timeout': (capture_record.retry * 5) + phantomjs_timeout}, exc=err,
+            countdown=app.config['COOLDOWN'],
+            max_retries=app.config['MAX_RETRIES'])
+    # Retry on connection error exceptions
     except ConnectionError as err:
         app.logger.error(err)
         capture_record.job_status = 'RETRY'
         capture_record.capture_status = str(err)
         capture_record.retry = retries + 1
         raise celery_capture.retry(args=[status_code, base_url],
-            kwargs={'capture_id' :capture_id, 'retries': capture_record.retry + 1, 'model': 'capture'}, exc=err,
+            kwargs={'capture_id' :capture_id, 'retries': capture_record.retry, 'model': 'capture'}, exc=err,
             countdown=app.config['COOLDOWN'],
             max_retries=app.config['MAX_RETRIES'])
     # For all other exceptions, fail immediately
