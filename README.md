@@ -15,6 +15,7 @@ Sketchy utilizes PhantomJS with [lazy-rendering](https://github.com/kimmobrunfel
 ## Release History ##
 
 **Version 1.1.1** - *June 16, 2015*
+
 This minor release addresses a few bugs and some new configuration features:
 
 - A new configuration option `PHANTOMJS_TIMEOUT` allows setting how long to wait for a capture to render before terminating the subprocess
