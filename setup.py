@@ -20,7 +20,7 @@ def read(fname):
 
 setup(
     name='sketchy',
-    version='1.1',
+    version='1.1.1',
     long_description=read('README.md'),
     packages=['sketchy'],
     include_package_data=True,
