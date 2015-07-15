@@ -31,7 +31,7 @@ CELERY_BROKER_URL = os.getenv('sketchy_broker_url', 'redis://localhost:6379')
 CELERY_RESULT_BACKEND = os.getenv('sketchy_result_backend', 'redis://localhost:6379')
 
 # Only accept json content for celery
-CELERY_ACCEPT_CONTENT = ['json']
+CELERY_ACCEPT_CONTENT = ['json', 'pickle']
 
 # Local Screenshot storage
 LOCAL_STORAGE_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'files')
