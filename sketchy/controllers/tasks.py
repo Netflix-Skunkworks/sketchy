@@ -179,7 +179,7 @@ def s3_save(files_to_write, the_record):
             calling_format = boto.s3.connection.OrdinaryCallingFormat()
         )
         key = Key(conn.get_bucket(app.config.get('S3_BUCKET_PREFIX')))
-        path = "sketchy/{}/{}".format(capture_type, the_record.id)
+        path = "sketchy/{}/{}".format(capture_type, file_name)
         key.key = path
         key.set_contents_from_filename(app.config['LOCAL_STORAGE_FOLDER'] + '/' + file_name)
 
