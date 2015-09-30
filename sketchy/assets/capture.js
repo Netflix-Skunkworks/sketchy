@@ -23,7 +23,10 @@
 // time for the page to make additional requests.
 
 var _ = require('./lodash.js');
+var system = require('system');
+var env = system.env;
 var fs = require('fs');
+
 
 var defaultOpts = {
     // How long do we wait for additional requests
@@ -47,10 +50,24 @@ var Page = (function(opts) {
     };
     
     page.settings.userAgent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/36.0.1944.0 Safari/537.36';
-    page.customHeaders = {
-      // Nullify Accept-Encoding header to disable compression (https://github.com/ariya/phantomjs/issues/10930)
-      'Accept-Encoding': ' '
-    };
+    // You can set phantomjs_cookies env variable to send a cookie string
+    var has_cookies = false;
+    var cookie_values;
+    Object.keys(env).forEach(function(key) {
+        if (key === 'phantomjs_cookies'){
+            has_cookies = true;
+            cookie_values = env[key];
+        };
+    });
+
+    if (has_cookies === true) {
+          page.customHeaders = {'Accept-Encoding': ' ', 'Cookie': cookie_values };
+    } else {
+      page.customHeaders = {
+        // Nullify Accept-Encoding header to disable compression (https://github.com/ariya/phantomjs/issues/10930)
+        'Accept-Encoding': ' '
+      };
+    }
     page.onInitialized = function() {
         page.customHeaders = {};
     };
