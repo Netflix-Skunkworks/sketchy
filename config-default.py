@@ -69,8 +69,8 @@ SSL_HOST_VALIDATION = False
 
 # Ignore a comma seperated list of IP ranges
 # any host that falls within the range will be ignored
-IP_BLACKLISTING = os.getenv('ip_blacklisting', 'True').lower() == 'true'
-IP_BLACKLISTING_RANGE = os.getenv('ip_blacklisting_range', '10.0.0.1/24,11.0.0.1/24,100.0.0.1/24,216.58.192.46/32')
+IP_BLACKLISTING = os.getenv('ip_blacklisting', 'False').lower() == 'true'
+IP_BLACKLISTING_RANGE = os.getenv('ip_blacklisting_range', '10.0.0.1/8,11.0.0.1/24,100.0.0.1/24')
 
 # Enable this option to screenshot webpages that generate 4xx or 5xx HTTP error codes
 CAPTURE_ERRORS = True
