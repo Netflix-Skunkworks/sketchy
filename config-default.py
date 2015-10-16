@@ -31,7 +31,10 @@ CELERY_BROKER_URL = os.getenv('sketchy_broker_url', 'redis://localhost:6379')
 CELERY_RESULT_BACKEND = os.getenv('sketchy_result_backend', 'redis://localhost:6379')
 
 # Only accept json content for celery
+
 CELERY_ACCEPT_CONTENT = ['json', 'pickle']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
 
 # Local Screenshot storage
 LOCAL_STORAGE_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'files')
@@ -64,6 +67,11 @@ SKETCHY_LOG_FILE = "sketchy.log"
 
 # Perform SSL host validation (set to False if you want to scrape/screenshot sketchy websites)
 SSL_HOST_VALIDATION = False
+
+# Ignore a comma seperated list of IP ranges
+# any host that falls within the range will be ignored
+IP_BLACKLISTING = os.getenv('ip_blacklisting', 'False').lower() == 'true'
+IP_BLACKLISTING_RANGE = os.getenv('ip_blacklisting_range', '10.0.0.1/8,11.0.0.1/24,100.0.0.1/24')
 
 # Enable this option to screenshot webpages that generate 4xx or 5xx HTTP error codes
 CAPTURE_ERRORS = True

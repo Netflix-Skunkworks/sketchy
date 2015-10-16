@@ -30,6 +30,8 @@ from sketchy.models.capture import Capture
 from sketchy.models.static import Static
 from sketchy.controllers.validators import grab_domain
 import subprocess32
+import socket
+import netaddr
 
 
 @celery.task(name='check_url', bind=True)
@@ -63,7 +65,7 @@ def check_url(self, capture_id=0, retries=0, model='capture'):
         capture_record.capture_status = str(err)
         capture_record.url_response_code = 0
 
-        check_url.retry(kwargs={'capture_id': capture_id, 'retries': capture_record.retry + 1}, exc=err, countdown=app.config['COOLDOWN'], max_retries=app.config['MAX_RETRIES'])
+        check_url.retry(kwargs={'capture_id': capture_id, 'retries': capture_record.retry + 1, 'model': model}, exc=err, countdown=app.config['COOLDOWN'], max_retries=app.config['MAX_RETRIES'])
 
     # If the code was not a good code, record the status as a 404 and raise an exception
     finally:
@@ -132,12 +134,12 @@ def do_capture(status_code, the_record, base_url, model='capture', phantomjs_tim
         wordz = " ".join((text, tail)).strip('\t')
         if wordz and len(wordz) >= 2 and not re.match("^[ \t\n]*$", wordz):
             output += wordz.encode('utf-8')
-   
+
     # Since the filename format is different for static captures, update the filename
     # This will ensure the URLs are pointing to the correct resources
     if model == 'static':
         capture_name = capture_name.split('.')[0]
-        
+
     # Wite our html text that was parsed into our capture folder
     parsed_text = open(os.path.join(app.config['LOCAL_STORAGE_FOLDER'], capture_name + '.txt'), 'wb')
     parsed_text.write(output)
@@ -298,6 +300,17 @@ def celery_capture(self, status_code, base_url, capture_id=0, retries=0, model="
     db.session.commit()
 
     try:
+        # Check if we need to ignore certain hosts
+        ip_addr = socket.gethostbyname(grab_domain(capture_record.url))
+
+        if app.config['IP_BLACKLISTING']:
+            if netaddr.all_matching_cidrs(ip_addr, app.config['IP_BLACKLISTING_RANGE'].split(',')):
+                capture_record.capture_status = "IP BLACKLISTED:{}".format(ip_addr)
+                if capture_record.callback:
+                    finisher(capture_record)
+                else:
+                    capture_record.job_status = 'COMPLETED'
+                return True
         # Perform a callback or complete the task depending on error code and config
         if capture_record.url_response_code > 400 and app.config['CAPTURE_ERRORS'] == False:
             if capture_record.callback:
@@ -314,7 +327,7 @@ def celery_capture(self, status_code, base_url, capture_id=0, retries=0, model="
         raise celery_capture.retry(args=[status_code, base_url],
             kwargs = { 'capture_id' :capture_id, 'retries': capture_record.retry + 1, 'model': 'capture'}, exc=err,
             countdown=app.config['COOLDOWN'],
-            max_retries=app.config['MAX_RETRIES'])        
+            max_retries=app.config['MAX_RETRIES'])
     except Exception as err:
         app.logger.error(err)
         capture_record.job_status = 'FAILURE'
