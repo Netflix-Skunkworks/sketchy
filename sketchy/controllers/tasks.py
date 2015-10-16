@@ -65,7 +65,7 @@ def check_url(self, capture_id=0, retries=0, model='capture'):
         capture_record.capture_status = str(err)
         capture_record.url_response_code = 0
 
-        check_url.retry(kwargs={'capture_id': capture_id, 'retries': capture_record.retry + 1}, exc=err, countdown=app.config['COOLDOWN'], max_retries=app.config['MAX_RETRIES'])
+        check_url.retry(kwargs={'capture_id': capture_id, 'retries': capture_record.retry + 1, 'model': model}, exc=err, countdown=app.config['COOLDOWN'], max_retries=app.config['MAX_RETRIES'])
 
     # If the code was not a good code, record the status as a 404 and raise an exception
     finally:
