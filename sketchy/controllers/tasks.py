@@ -40,6 +40,12 @@ def check_url(self, capture_id=0, retries=0, model='capture'):
     Check if a URL exists without downloading the whole file.
     We only check the URL header.
     """
+    cookies = {}
+    try:
+        cookies = dict(item.split("=") for item in os.getenv('phantomjs_cookies').split(" "))
+    except:
+        pass
+
     capture_record = Capture.query.filter(Capture.id == capture_id).first()
     capture_record.job_status = 'STARTED'
     # Write the number of retries to the capture record
@@ -50,7 +56,7 @@ def check_url(self, capture_id=0, retries=0, model='capture'):
     try:
         response = ""
         verify_ssl = app.config['SSL_HOST_VALIDATION']
-        response = requests.get(capture_record.url, verify=verify_ssl, allow_redirects=False, headers={"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.9; rv:28.0) Gecko/20100101 Firefox/28.0"})
+        response = requests.get(capture_record.url, verify=verify_ssl, allow_redirects=False, headers={"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.9; rv:28.0) Gecko/20100101 Firefox/28.0"}, cookies=cookies)
         capture_record.url_response_code = response.status_code
         if capture_record.status_only:
             capture_record.job_status = 'COMPLETED'
