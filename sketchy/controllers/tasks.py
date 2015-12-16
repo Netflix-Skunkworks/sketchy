@@ -40,6 +40,7 @@ def check_url(self, capture_id=0, retries=0, model='capture'):
     Check if a URL exists without downloading the whole file.
     We only check the URL header.
     """
+    # check for env variable for session cookies
     cookies = {}
     try:
         cookies = dict(item.split("=") for item in os.getenv('phantomjs_cookies').split(" "))
