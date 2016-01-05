@@ -48,7 +48,7 @@ var Page = (function(opts) {
         width: opts.width,
         height: opts.height
     };
-    
+
     page.settings.userAgent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/36.0.1944.0 Safari/537.36';
     // You can set phantomjs_cookies env variable to send a cookie string
     var has_cookies = false;
@@ -78,6 +78,16 @@ var Page = (function(opts) {
         requestCount += 1;
         clearTimeout(ajaxRenderTimeout);
     };
+
+    page.onResourceError = function(resourceError) {
+        if (!response.stage || response.stage === 'end') {
+            requestCount -= 1;
+            if (requestCount === 0) {
+                ajaxRenderTimeout = setTimeout(renderAndExit, opts.ajaxTimeout);
+            }
+        }
+    };
+
 
     page.onResourceReceived = function(response) {
         if (!response.stage || response.stage === 'end') {

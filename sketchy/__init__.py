@@ -13,20 +13,16 @@
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
 # Imports
-import logging
 import os
 
 from functools import wraps
-from logging import Formatter
-from celery import Celery, Task
+from celery import Celery
 from flask.ext.restful import Api
 from flask.ext.sqlalchemy import SQLAlchemy
-from flask.ext.restful import Resource, reqparse
 from flask import Flask, send_from_directory, request, abort
 from sqlalchemy.exc import IntegrityError
 from sketchy.loggers import sketchy_logger
-from logging.handlers import RotatingFileHandler
-from werkzeug import secure_filename
+
 # App Config
 app = Flask(__name__)
 # Specify which config file to load (config-test or config-default)
@@ -38,6 +34,7 @@ sketchy_logger(app)
 from sketchy.models.capture import Capture
 from sketchy.models.static import Static
 
+
 def make_celery(app):
     """Make a celery object that extends Flask context."""
     celery = Celery(app.import_name, broker=app.config['CELERY_BROKER_URL'])
@@ -46,6 +43,7 @@ def make_celery(app):
 
     class ContextTask(TaskBase):
         abstract = True
+
         def __call__(self, *args, **kwargs):
             with app.app_context():
                 return TaskBase.__call__(self, *args, **kwargs)
@@ -59,9 +57,11 @@ def make_celery(app):
             # Check if the failures was on a capture or a static capture
             try:
                 if kwargs['model'] == 'capture':
-                    the_record = Capture.query.filter(Capture.id == kwargs['capture_id']).first()
+                    the_record = Capture.query.filter(
+                        Capture.id == kwargs['capture_id']).first()
                 else:
-                    the_record = Static.query.filter(Static.id == kwargs['capture_id']).first()
+                    the_record = Static.query.filter(
+                        Static.id == kwargs['capture_id']).first()
                 the_record.job_status = 'FAILURE'
                 if str(exc):
                     the_record.capture_status = str(exc)
@@ -79,6 +79,7 @@ def make_celery(app):
 
 # Instantiate celery object for associated tasks
 celery = make_celery(app)
+
 
 def app_key_check(view_function):
     """
@@ -126,6 +127,8 @@ def uploaded_file(filename):
                                filename, as_attachment=True)
 
 # Healthcheck
+
+
 @app.route('/healthcheck')
 def home():
     return 'Ok'

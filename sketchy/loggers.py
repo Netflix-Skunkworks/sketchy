@@ -15,13 +15,14 @@ from logging import Formatter
 from logging.handlers import RotatingFileHandler
 from celery.utils.log import logging
 
+
 def sketchy_logger(app):
-# App logger
+    '''Logger configuration for Sketchy'''
     file_handler = RotatingFileHandler(
         app.config.get('SKETCHY_LOG_FILE'),
         maxBytes=10000000,
         backupCount=100)
     file_handler.setFormatter(Formatter('%(asctime)s %(levelname)s: %(message)s '
-    '[in %(pathname)s:%(lineno)d]'))
+                                        '[in %(pathname)s:%(lineno)d]'))
     app.logger.addHandler(file_handler)
     app.logger.setLevel(logging.DEBUG)

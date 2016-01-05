@@ -123,7 +123,7 @@ def do_capture(status_code, the_record, base_url, model='capture', phantomjs_tim
 
     # If the subprocess has an error, raise an exception
     if stderr or stdout:
-        raise Exception(stderr)
+        raise Exception("{}{}".format(stdout, stderr))
 
     # Strip tags and parse out all text
     ignore_tags = ('script', 'noscript', 'style')
