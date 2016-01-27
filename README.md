@@ -2,7 +2,7 @@
 #Overview#
 ## What is Sketchy?
 
-Sketchy is a task based API for taking screenshots and scraping text from websites. 
+Sketchy is a task based API for taking screenshots and scraping text from websites.
 
 ## What is the Output of Sketchy?
 
@@ -14,23 +14,30 @@ Sketchy utilizes PhantomJS with [lazy-rendering](https://github.com/kimmobrunfel
 
 ## Release History ##
 
+**Version 1.1.2** - *January 27, 2016*
+
+This minor release addresses a bug and a new configuration option:
+
+- A default timeout of 5 seconds was added to check_url task.  This should prevent workers from hanging [#26](https://github.com/Netflix/sketchy/issues/26).
+- You can now specify a cookie store via an envionrment variable 'phantomjs_cookies' which will be used by PhantomJS.  This env variable simply needs to be a string of key/value cookie pairs.
+
 **Version 1.1.1** - *June 16, 2015*
 
 This minor release addresses a few bugs and some new configuration features:
 
 - A new configuration option `PHANTOMJS_TIMEOUT` allows setting how long to wait for a capture to render before terminating the subprocess
 - Celery retry functionality was added when PhatomJS fails to render a screenshot before the PhantomJS timeout occurs
-- An incremental PhantomJS timeout was introduced to improve PhantomJS success at generating very large screenshots.  Each time PhantomJS retries to render a screenshot 5 seconds will be added to the previous `PHANTOMJS_TIMEOUT` configuration option.  
+- An incremental PhantomJS timeout was introduced to improve PhantomJS success at generating very large screenshots.  Each time PhantomJS retries to render a screenshot 5 seconds will be added to the previous `PHANTOMJS_TIMEOUT` configuration option.
 - A number of typos have been fixed and comments have been added.
 
 **Version 1.1** - *December 4, 2014*
 
 A number of improvements and bug fixes have been made:
 
-- A new model and API endpoint called "Static" was created.  This allows users to send Sketchy a static HTML file for text scraping and screenshoting.  See the [Wiki](https://github.com/Netflix/Sketchy/wiki) for usage information.  
-- New PhantomJS script called 'static.js' for creating screenshots of static html files.  
-- Creation of a new endpont: api/v1.0/capture/last which shows the last capture that was taken.  
-- Creation of a new endpont: api/v1.0/static/last which shows the last static capture that was taken.  
+- A new model and API endpoint called "Static" was created.  This allows users to send Sketchy a static HTML file for text scraping and screenshoting.  See the [Wiki](https://github.com/Netflix/Sketchy/wiki) for usage information.
+- New PhantomJS script called 'static.js' for creating screenshots of static html files.
+- Creation of a new endpont: api/v1.0/capture/last which shows the last capture that was taken.
+- Creation of a new endpont: api/v1.0/static/last which shows the last static capture that was taken.
 - API list view is now reverse sorted so most recent capture is listed on the top of the page.
 - For callback requests, capture status is now updated
 - Task retry has been optimitzed to only retry on ConnectionErrors.  This should speedup errors that would never succeed during a retry.
@@ -42,4 +49,4 @@ A number of improvements and bug fixes have been made:
 Documentation is maintained in the Github [Wiki](https://github.com/Netflix/Sketchy/wiki)
 
 #Docker#
-Sketchy is also available as a [Docker](https://github.com/sbehrens/docker_sketchy) container.  
+Sketchy is also available as a [Docker](https://github.com/sbehrens/docker_sketchy) container.
