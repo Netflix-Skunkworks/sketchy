@@ -43,10 +43,10 @@ LOCAL_STORAGE_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), 
 PHANTOMJS_TIMEOUT = 35
 
 # Maximum number of Celery Job retries on failure
-MAX_RETRIES = 3
+MAX_RETRIES = 1
 
 # Seconds to sleep before retrying the task
-COOLDOWN = 5
+COOLDOWN = 3
 
 # Path to Phanotom JS
 PHANTOMJS = '/usr/local/bin/phantomjs'
@@ -54,7 +54,7 @@ PHANTOMJS = '/usr/local/bin/phantomjs'
 # S3 Specific configurations
 # This will store your sketches, scrapes, and html in an S3 bucket
 USE_S3 = os.getenv('use_s3', 'False').lower() == 'true'
-S3_BUCKET_PREFIX = os.getenv('bucket_prefix', '')
+S3_BUCKET_PREFIX = os.getenv('bucket_prefix', 'bucket.test')
 S3_LINK_EXPIRATION = 6000000
 S3_BUCKET_REGION_NAME = os.getenv('bucket_region_name', 'us-east-1')
 
