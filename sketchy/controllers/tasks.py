@@ -41,6 +41,7 @@ def check_url(self, capture_id=0, retries=0, model='capture'):
     We only check the URL header.
     """
     # check for env variable for session cookies
+
     cookies = {}
     try:
         cookies = dict(item.split("=") for item in os.getenv('phantomjs_cookies').split(" "))
@@ -53,6 +54,7 @@ def check_url(self, capture_id=0, retries=0, model='capture'):
     db.session.add(capture_record)
     capture_record.retry = retries
     db.session.commit()
+
     # Only retrieve the headers of the request, and return respsone code
     try:
         response = ""
@@ -235,6 +237,16 @@ def finisher(the_record):
     headers = {'Content-type': 'application/json', 'Accept': 'text/plain', 'Connection': 'close'}
     #proxy = {"http": "127.0.0.1:8080"}
 
+    try:
+        # Blacklist IP addresses
+        ip_addr = socket.gethostbyname(grab_domain(the_record.url))
+
+        if app.config['IP_BLACKLISTING']:
+            if netaddr.all_matching_cidrs(ip_addr, app.config['IP_BLACKLISTING_RANGE'].split(',')):
+                the_record.capture_status = "IP BLACKLISTED:{} - ".format(ip_addr) + the_record.capture_status
+    except:
+        pass
+
     req = post(the_record.callback, verify=verify_ssl, data=json.dumps(the_record.as_dict()), headers=headers)
 
     # If a 4xx or 5xx status is recived, raise an exception
@@ -308,17 +320,6 @@ def celery_capture(self, status_code, base_url, capture_id=0, retries=0, model="
     db.session.commit()
 
     try:
-        # Check if we need to ignore certain hosts
-        ip_addr = socket.gethostbyname(grab_domain(capture_record.url))
-
-        if app.config['IP_BLACKLISTING']:
-            if netaddr.all_matching_cidrs(ip_addr, app.config['IP_BLACKLISTING_RANGE'].split(',')):
-                capture_record.capture_status = "IP BLACKLISTED:{}".format(ip_addr)
-                if capture_record.callback:
-                    finisher(capture_record)
-                else:
-                    capture_record.job_status = 'COMPLETED'
-                return True
         # Perform a callback or complete the task depending on error code and config
         if capture_record.url_response_code > 400 and app.config['CAPTURE_ERRORS'] == False:
             if capture_record.callback:
