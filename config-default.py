@@ -13,12 +13,12 @@
 #     limitations under the License.
 import os
 
-_basedir = os.path.abspath(os.path.dirname(__file__))
+_basedir = os.path.abspath(os.path.dirname("__file__"))
 
 DEBUG = True
 
 # Database setup
-SQLALCHEMY_DATABASE_URI = os.getenv('sketchy_db', 'sqlite:////tmp/sketchy-db.db')
+SQLALCHEMY_DATABASE_URI = os.getenv('sketchy_db', 'sqlite:///{}/sketchy-db.db'.format(_basedir))
 
 # Set scheme and hostname:port of your sketchy server.
 # Alterntively, you can export the 'host' variable on your system to set the
