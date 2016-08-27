@@ -25,15 +25,17 @@ fi
 command -v phantomjs >/dev/null 2>&1 || { 
 echo "phantomjs not found...installing."
 
+PHANTOMJS_64="phantomjs-1.9.8-linux-x86_64"
+PHANTOMJS_32="phantomjs-1.9.8-linux-i686"
 MACHINE_TYPE=`uname -m`
     if [ ${MACHINE_TYPE} == 'x86_64' ]; then
-        sudo wget -O /usr/local/share/phantomjs-1.9.7-linux-x86_64.tar.bz2 https://bitbucket.org/ariya/phantomjs/downloads/phantomjs-1.9.7-linux-x86_64.tar.bz2
-        sudo tar -xf /usr/local/share/phantomjs-1.9.7-linux-x86_64.tar.bz2 -C /usr/local/share/
-        sudo ln -s /usr/local/share/phantomjs-1.9.7-linux-x86_64/bin/phantomjs /usr/local/bin/phantomjs
+        sudo wget -O /usr/local/share/${PHANTOMJS_64}.tar.bz2 https://bitbucket.org/ariya/phantomjs/downloads/${PHANTOMJS_64}.tar.bz2
+        sudo tar -xf /usr/local/share/${PHANTOMJS_64}.tar.bz2 -C /usr/local/share/
+        sudo ln -s /usr/local/share/${PHANTOMJS_64}/bin/phantomjs /usr/local/bin/phantomjs
     else
-        sudo wget -O /usr/local/share/phantomjs-1.9.7-linux-i686.tar.bz2 https://bitbucket.org/ariya/phantomjs/downloads/phantomjs-1.9.7-linux-i686.tar.bz2
-        sudo tar -xf /usr/local/share/phantomjs-1.9.7-linux-i686.tar.bz2 -C /usr/local/share/
-        sudo ln -s /usr/local/share/phantomjs-1.9.7-linux-i686/bin/phantomjs /usr/local/bin/phantomjs
+        sudo wget -O /usr/local/share/${PHANTOMJS_32}.tar.bz2 https://bitbucket.org/ariya/phantomjs/downloads/${PHANTOMJS_32}.tar.bz2
+        sudo tar -xf /usr/local/share/${PHANTOMJS_32}.tar.bz2 -C /usr/local/share/
+        sudo ln -s /usr/local/share/${PHANTOMJS_32}/bin/phantomjs /usr/local/bin/phantomjs
     fi
 }
 
