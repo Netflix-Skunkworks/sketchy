@@ -14,12 +14,21 @@
 #     limitations under the License.
 sudo apt-get update
 sudo apt-get -y install libmysqlclient-dev libxslt-dev libxml2-dev python-pip python-dev libfontconfig1
+sudo apt-get -y install fonts-arphic-ukai fonts-arphic-uming fonts-arphic-gbsn00lp fonts-arphic-bkai00mp fonts-arphic-bsmi00lp fonts-arphic-gkai00mp ttf-bitstream-vera ttf-dejavu
 if (( $? == 0 )); then
     echo 'apt-get deps installed'
 else
     echo 'Boo, there was an error installing deps!'
     exit 1
 
+fi
+
+sudo fc-cache -vf
+if (( $? == 0)); then
+    echo 'fc-cache font cache rebuilt successfully'
+else
+    echo 'Could not rebuild font cache'
+    exit 1
 fi
 
 command -v phantomjs >/dev/null 2>&1 || { 
