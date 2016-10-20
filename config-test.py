@@ -52,5 +52,5 @@ S3_BUCKET_REGION_NAME = 'us-east-1'
 REQUIRE_AUTH = False
 AUTH_TOKEN = os.getenv('auth_token', 'test')
 
-# Log file configuration (currenlty only logs errors)
+# Log file configuration (currently only logs errors)
 SKETCHY_LOG_FILE = "sketchy.log"
