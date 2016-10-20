@@ -19,7 +19,7 @@ Sketchy utilizes PhantomJS with [lazy-rendering](https://github.com/kimmobrunfel
 This minor release addresses a bug and a new configuration option:
 
 - A default timeout of 5 seconds was added to check_url task.  This should prevent workers from hanging [#26](https://github.com/Netflix/sketchy/issues/26).
-- You can now specify a cookie store via an envionrment variable 'phantomjs_cookies' which will be used by PhantomJS.  This env variable simply needs to be a string of key/value cookie pairs.
+- You can now specify a cookie store via an environment variable 'phantomjs_cookies' which will be used by PhantomJS.  This env variable simply needs to be a string of key/value cookie pairs.
 
 **Version 1.1.1** - *June 16, 2015*
 
