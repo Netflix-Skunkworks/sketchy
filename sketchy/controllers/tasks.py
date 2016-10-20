@@ -91,7 +91,7 @@ def do_capture(status_code, the_record, base_url, model='capture', phantomjs_tim
     """
     # Make sure the the_record
     db.session.add(the_record)
-    # If the capture is for static content, use a differnet PhantomJS config file
+    # If the capture is for static content, use a different PhantomJS config file
     if model == 'static':
         capture_name = the_record.filename
         service_args = [
