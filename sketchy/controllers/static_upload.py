@@ -63,7 +63,7 @@ class StaticViewLast(Resource):
 
 class StaticViewList(Resource):
     """
-    API Provides CRUD operations for Sstatic HTML file captures.
+    API Provides CRUD operations for Static HTML file captures.
 
     Methods:
     GET
