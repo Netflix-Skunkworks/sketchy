@@ -34,7 +34,7 @@ This minor release addresses a few bugs and some new configuration features:
 
 A number of improvements and bug fixes have been made:
 
-- A new model and API endpoint called "Static" was created.  This allows users to send Sketchy a static HTML file for text scraping and screenshoting.  See the [Wiki](https://github.com/Netflix/Sketchy/wiki) for usage information.
+- A new model and API endpoint called "Static" was created.  This allows users to send Sketchy a static HTML file for text scraping and screenshotting.  See the [Wiki](https://github.com/Netflix/Sketchy/wiki) for usage information.
 - New PhantomJS script called 'static.js' for creating screenshots of static html files.
 - Creation of a new endpoint: api/v1.0/capture/last which shows the last capture that was taken.
 - Creation of a new endpoint: api/v1.0/static/last which shows the last static capture that was taken.
