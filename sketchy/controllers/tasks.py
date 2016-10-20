@@ -285,7 +285,7 @@ def celery_static_capture(self, base_url, capture_id=0, retries=0, model="static
                 s3_save(files_to_write, static_record)
         elif static_record.callback:
                 finisher(static_record)
-    # Only execute retries on ConnectionError exceptions, otherwise fail immediatley
+    # Only execute retries on ConnectionError exceptions, otherwise fail immediately
     except ConnectionError as err:
         app.logger.error(err)
         static_record.job_status = 'RETRY'
@@ -327,7 +327,7 @@ def celery_capture(self, status_code, base_url, capture_id=0, retries=0, model="
             else:
                 capture_record.job_status = 'COMPLETED'
             return True
-    # Only execute retries on ConnectionError exceptions, otherwise fail immediatley
+    # Only execute retries on ConnectionError exceptions, otherwise fail immediately
     except ConnectionError as err:
         app.logger.error(err)
         capture_record.job_status = 'RETRY'
