@@ -33,7 +33,7 @@ BASE_URL = 'http://%s' % os.getenv('host', '127.0.0.1:8000')
 # Local Screenshot storage
 LOCAL_STORAGE_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'files')
 
-# Maxiumin number of Celery Job retries on failure
+# Maximum number of Celery Job retries on failure
 MAX_RETRIES = 2
 
 # Seconds to sleep before retrying the task
