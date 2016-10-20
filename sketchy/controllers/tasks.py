@@ -249,7 +249,7 @@ def finisher(the_record):
 
     req = post(the_record.callback, verify=verify_ssl, data=json.dumps(the_record.as_dict()), headers=headers)
 
-    # If a 4xx or 5xx status is recived, raise an exception
+    # If a 4xx or 5xx status is received, raise an exception
     req.raise_for_status()
 
     # Update capture_record and save to database
