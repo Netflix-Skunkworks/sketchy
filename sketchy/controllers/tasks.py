@@ -55,7 +55,7 @@ def check_url(self, capture_id=0, retries=0, model='capture'):
     capture_record.retry = retries
     db.session.commit()
 
-    # Only retrieve the headers of the request, and return respsone code
+    # Only retrieve the headers of the request, and return response code
     try:
         response = ""
         verify_ssl = app.config['SSL_HOST_VALIDATION']
@@ -180,7 +180,7 @@ def s3_save(files_to_write, the_record):
     """
     db.session.add(the_record)
     # These are the content-types for the files S3 will be serving up
-    reponse_types = {'sketch': 'image/png', 'scrape': 'text/plain', 'html': 'text/html'}
+    response_types = {'sketch': 'image/png', 'scrape': 'text/plain', 'html': 'text/html'}
 
     # Iterate through each file we need to write to s3
     for capture_type, file_name in files_to_write.items():
@@ -201,7 +201,7 @@ def s3_save(files_to_write, the_record):
             bucket=app.config.get('S3_BUCKET_PREFIX'),
             key=key.key,
             response_headers={
-                'response-content-type': reponse_types[capture_type],
+                'response-content-type': response_types[capture_type],
                 'response-content-disposition': 'attachment; filename=' + file_name
             })
 
