@@ -1445,8 +1445,8 @@
         return createWrapper.apply(null, bindData);
       }
       // fast path for `_.bind`
-      var creater = (bitmask == 1 || bitmask === 17) ? baseBind : baseCreateWrapper;
-      return creater([func, bitmask, partialArgs, partialRightArgs, thisArg, arity]);
+      var creator = (bitmask == 1 || bitmask === 17) ? baseBind : baseCreateWrapper;
+      return creator([func, bitmask, partialArgs, partialRightArgs, thisArg, arity]);
     }
 
     /**

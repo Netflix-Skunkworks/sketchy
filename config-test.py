@@ -25,7 +25,7 @@ CELERY_BROKER_URL = 'redis://localhost:6379'
 CELERY_RESULT_BACKEND = 'redis://localhost:6379'
 
 # Set scheme and hostname:port of your server.
-# Alterntively, you can export the 'host' variable on your system to set the
+# Alternatively, you can export the 'host' variable on your system to set the
 # host and port.
 # If you are using Nginx with SSL, change the scheme to https.
 BASE_URL = 'http://%s' % os.getenv('host', '127.0.0.1:8000')
@@ -33,13 +33,13 @@ BASE_URL = 'http://%s' % os.getenv('host', '127.0.0.1:8000')
 # Local Screenshot storage
 LOCAL_STORAGE_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'files')
 
-# Maxiumin number of Celery Job retries on failure
+# Maximum number of Celery Job retries on failure
 MAX_RETRIES = 2
 
 # Seconds to sleep before retrying the task
 COOLDOWN = 5
 
-# Path to Phanotom JS
+# Path to Phantom JS
 PHANTOMJS = '/usr/local/bin/phantomjs'
 
 # S3 Specific configurations
@@ -52,5 +52,5 @@ S3_BUCKET_REGION_NAME = 'us-east-1'
 REQUIRE_AUTH = False
 AUTH_TOKEN = os.getenv('auth_token', 'test')
 
-# Log file configuration (currenlty only logs errors)
+# Log file configuration (currently only logs errors)
 SKETCHY_LOG_FILE = "sketchy.log"

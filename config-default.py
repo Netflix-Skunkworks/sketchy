@@ -21,7 +21,7 @@ DEBUG = True
 SQLALCHEMY_DATABASE_URI = os.getenv('sketchy_db', 'sqlite:///{}/sketchy-db.db'.format(_basedir))
 
 # Set scheme and hostname:port of your sketchy server.
-# Alterntively, you can export the 'host' variable on your system to set the
+# Alternatively, you can export the 'host' variable on your system to set the
 # host and port.
 # If you are using Nginx with SSL, change the scheme to https.
 BASE_URL = 'http://%s' % os.getenv('host', '127.0.0.1:8000')
@@ -48,7 +48,7 @@ MAX_RETRIES = 1
 # Seconds to sleep before retrying the task
 COOLDOWN = 3
 
-# Path to Phanotom JS
+# Path to Phantom JS
 PHANTOMJS = '/usr/local/bin/phantomjs'
 
 # S3 Specific configurations
@@ -68,7 +68,7 @@ SKETCHY_LOG_FILE = "sketchy.log"
 # Perform SSL host validation (set to False if you want to scrape/screenshot sketchy websites)
 SSL_HOST_VALIDATION = False
 
-# Ignore a comma seperated list of IP ranges
+# Ignore a comma separated list of IP ranges
 # any host that falls within the range will be ignored
 IP_BLACKLISTING = os.getenv('ip_blacklisting', 'False').lower() == 'true'
 IP_BLACKLISTING_RANGE = os.getenv('ip_blacklisting_range', '10.0.0.1/8,11.0.0.1/8,100.0.0.1/8')

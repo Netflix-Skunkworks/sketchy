@@ -55,7 +55,7 @@ def check_url(self, capture_id=0, retries=0, model='capture'):
     capture_record.retry = retries
     db.session.commit()
 
-    # Only retrieve the headers of the request, and return respsone code
+    # Only retrieve the headers of the request, and return response code
     try:
         response = ""
         verify_ssl = app.config['SSL_HOST_VALIDATION']
@@ -91,7 +91,7 @@ def do_capture(status_code, the_record, base_url, model='capture', phantomjs_tim
     """
     # Make sure the the_record
     db.session.add(the_record)
-    # If the capture is for static content, use a differnet PhantomJS config file
+    # If the capture is for static content, use a different PhantomJS config file
     if model == 'static':
         capture_name = the_record.filename
         service_args = [
@@ -180,7 +180,7 @@ def s3_save(files_to_write, the_record):
     """
     db.session.add(the_record)
     # These are the content-types for the files S3 will be serving up
-    reponse_types = {'sketch': 'image/png', 'scrape': 'text/plain', 'html': 'text/html'}
+    response_types = {'sketch': 'image/png', 'scrape': 'text/plain', 'html': 'text/html'}
 
     # Iterate through each file we need to write to s3
     for capture_type, file_name in files_to_write.items():
@@ -201,7 +201,7 @@ def s3_save(files_to_write, the_record):
             bucket=app.config.get('S3_BUCKET_PREFIX'),
             key=key.key,
             response_headers={
-                'response-content-type': reponse_types[capture_type],
+                'response-content-type': response_types[capture_type],
                 'response-content-disposition': 'attachment; filename=' + file_name
             })
 
@@ -249,12 +249,12 @@ def finisher(the_record):
 
     req = post(the_record.callback, verify=verify_ssl, data=json.dumps(the_record.as_dict()), headers=headers)
 
-    # If a 4xx or 5xx status is recived, raise an exception
+    # If a 4xx or 5xx status is received, raise an exception
     req.raise_for_status()
 
     # Update capture_record and save to database
     the_record.job_status = 'COMPLETED'
-    # Removed to propigate blacklist message
+    # Removed to propagate blacklist message
     #the_record.capture_status = 'CALLBACK_SUCCEEDED'
     db.session.add(the_record)
     db.session.commit()
@@ -276,7 +276,7 @@ def celery_static_capture(self, base_url, capture_id=0, retries=0, model="static
     try:
         # call the main capture function to retrieve sketches and scrapes
         files_to_write = do_capture(0, static_record, base_url, model='static')
-        # Call the s3 save funciton if s3 is configured, and perform callback if configured.
+        # Call the s3 save function if s3 is configured, and perform callback if configured.
         if app.config['USE_S3']:
             if static_record.callback:
                 s3_save(files_to_write, static_record)
@@ -285,7 +285,7 @@ def celery_static_capture(self, base_url, capture_id=0, retries=0, model="static
                 s3_save(files_to_write, static_record)
         elif static_record.callback:
                 finisher(static_record)
-    # Only execute retries on ConnectionError exceptions, otherwise fail immediatley
+    # Only execute retries on ConnectionError exceptions, otherwise fail immediately
     except ConnectionError as err:
         app.logger.error(err)
         static_record.job_status = 'RETRY'
@@ -327,7 +327,7 @@ def celery_capture(self, status_code, base_url, capture_id=0, retries=0, model="
             else:
                 capture_record.job_status = 'COMPLETED'
             return True
-    # Only execute retries on ConnectionError exceptions, otherwise fail immediatley
+    # Only execute retries on ConnectionError exceptions, otherwise fail immediately
     except ConnectionError as err:
         app.logger.error(err)
         capture_record.job_status = 'RETRY'
@@ -349,7 +349,7 @@ def celery_capture(self, status_code, base_url, capture_id=0, retries=0, model="
     try:
         # call the main capture function to retrieve sketches, scrapes, and html
         files_to_write = do_capture(status_code, capture_record, base_url, model='capture', phantomjs_timeout=phantomjs_timeout)
-        # Call the s3 save funciton if s3 is configured, and perform callback if configured.
+        # Call the s3 save function if s3 is configured, and perform callback if configured.
         if app.config['USE_S3']:
             if capture_record.callback:
                 s3_save(files_to_write, capture_record)

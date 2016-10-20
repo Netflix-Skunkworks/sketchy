@@ -19,7 +19,7 @@ def get_server_status_code(url):
     """
     Return the server's status code.
     """
-    # Only retrieve the headers of the request, and return respsone code
+    # Only retrieve the headers of the request, and return response code
     try:
         verify_ssl = app.config['SSL_HOST_VALIDATION']
         response = requests.get(url, headers={"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.9; rv:28.0) Gecko/20100101 Firefox/28.0"}, verify=verify_ssl)
