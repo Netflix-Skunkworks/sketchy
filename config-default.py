@@ -48,7 +48,7 @@ MAX_RETRIES = 1
 # Seconds to sleep before retrying the task
 COOLDOWN = 3
 
-# Path to Phanotom JS
+# Path to Phantom JS
 PHANTOMJS = '/usr/local/bin/phantomjs'
 
 # S3 Specific configurations

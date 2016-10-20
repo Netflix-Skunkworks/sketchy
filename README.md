@@ -26,7 +26,7 @@ This minor release addresses a bug and a new configuration option:
 This minor release addresses a few bugs and some new configuration features:
 
 - A new configuration option `PHANTOMJS_TIMEOUT` allows setting how long to wait for a capture to render before terminating the subprocess
-- Celery retry functionality was added when PhatomJS fails to render a screenshot before the PhantomJS timeout occurs
+- Celery retry functionality was added when PhantomJS fails to render a screenshot before the PhantomJS timeout occurs
 - An incremental PhantomJS timeout was introduced to improve PhantomJS success at generating very large screenshots.  Each time PhantomJS retries to render a screenshot 5 seconds will be added to the previous `PHANTOMJS_TIMEOUT` configuration option.
 - A number of typos have been fixed and comments have been added.
 
