@@ -254,7 +254,7 @@ def finisher(the_record):
 
     # Update capture_record and save to database
     the_record.job_status = 'COMPLETED'
-    # Removed to propigate blacklist message
+    # Removed to propagate blacklist message
     #the_record.capture_status = 'CALLBACK_SUCCEEDED'
     db.session.add(the_record)
     db.session.commit()
