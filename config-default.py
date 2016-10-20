@@ -21,7 +21,7 @@ DEBUG = True
 SQLALCHEMY_DATABASE_URI = os.getenv('sketchy_db', 'sqlite:///{}/sketchy-db.db'.format(_basedir))
 
 # Set scheme and hostname:port of your sketchy server.
-# Alterntively, you can export the 'host' variable on your system to set the
+# Alternatively, you can export the 'host' variable on your system to set the
 # host and port.
 # If you are using Nginx with SSL, change the scheme to https.
 BASE_URL = 'http://%s' % os.getenv('host', '127.0.0.1:8000')

@@ -25,7 +25,7 @@ CELERY_BROKER_URL = 'redis://localhost:6379'
 CELERY_RESULT_BACKEND = 'redis://localhost:6379'
 
 # Set scheme and hostname:port of your server.
-# Alterntively, you can export the 'host' variable on your system to set the
+# Alternatively, you can export the 'host' variable on your system to set the
 # host and port.
 # If you are using Nginx with SSL, change the scheme to https.
 BASE_URL = 'http://%s' % os.getenv('host', '127.0.0.1:8000')
