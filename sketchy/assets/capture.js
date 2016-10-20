@@ -16,7 +16,7 @@
  *
  */
 // PhantomJS script
-// Takes screeshot of a given page. This correctly handles pages which
+// Takes screenshot of a given page. This correctly handles pages which
 // dynamically load content making AJAX requests.
 
 // Instead of waiting fixed amount of time before rendering, we give a short
