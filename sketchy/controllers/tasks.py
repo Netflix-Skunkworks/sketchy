@@ -276,7 +276,7 @@ def celery_static_capture(self, base_url, capture_id=0, retries=0, model="static
     try:
         # call the main capture function to retrieve sketches and scrapes
         files_to_write = do_capture(0, static_record, base_url, model='static')
-        # Call the s3 save funciton if s3 is configured, and perform callback if configured.
+        # Call the s3 save function if s3 is configured, and perform callback if configured.
         if app.config['USE_S3']:
             if static_record.callback:
                 s3_save(files_to_write, static_record)
@@ -349,7 +349,7 @@ def celery_capture(self, status_code, base_url, capture_id=0, retries=0, model="
     try:
         # call the main capture function to retrieve sketches, scrapes, and html
         files_to_write = do_capture(status_code, capture_record, base_url, model='capture', phantomjs_timeout=phantomjs_timeout)
-        # Call the s3 save funciton if s3 is configured, and perform callback if configured.
+        # Call the s3 save function if s3 is configured, and perform callback if configured.
         if app.config['USE_S3']:
             if capture_record.callback:
                 s3_save(files_to_write, capture_record)
