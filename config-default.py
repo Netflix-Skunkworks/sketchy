@@ -43,7 +43,7 @@ LOCAL_STORAGE_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), 
 PHANTOMJS_TIMEOUT = 35
 
 # Maximum number of Celery Job retries on failure
-MAX_RETRIES = 1
+MAX_RETRIES = 0
 
 # Seconds to sleep before retrying the task
 COOLDOWN = 3
