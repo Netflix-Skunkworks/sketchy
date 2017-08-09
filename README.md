@@ -44,9 +44,9 @@ A number of improvements and bug fixes have been made:
 - A new configuration setting "SSL\_HOST\_VALIDATION" can be set to scrape/screenshot webpages with SSL errors.
 - A new configuration setting "CAPTURE_ERRORS" can be used to scrape/screenshot webpages that have 4xx or 5xx http status codes.
 
-#Documentation#
+# Documentation #
 
 Documentation is maintained in the Github [Wiki](https://github.com/Netflix/Sketchy/wiki)
 
-#Docker#
+# Docker #
 Sketchy is also available as a [Docker](https://github.com/sbehrens/docker_sketchy) container.
