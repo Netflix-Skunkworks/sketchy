@@ -1,5 +1,5 @@
 ![Sketchy](http://i.imgur.com/WvGJ8Ri.jpg)
-#Overview#
+# Overview
 ## What is Sketchy?
 
 Sketchy is a task based API for taking screenshots and scraping text from websites.
