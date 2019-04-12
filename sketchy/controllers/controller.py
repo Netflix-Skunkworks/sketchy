@@ -134,7 +134,7 @@ class CaptureViewList(Resource):
         else:
             # If the application is configured for S3 store contents in a bucket
             # This will first check if URL is valid, then sketch, scrape, and store files
-            celery_sketch = chain(tasks.check_url.s(capture_id=capture_record.id),
+            celery_sketch = chain(tasks.check_url.s(capture_id=capture_record.id, model='capture'),
                                   tasks.celery_capture.s(base_url, capture_id=capture_record.id, model='capture')
                                   ).apply_async()
 
@@ -152,7 +152,7 @@ class Eager(Resource):
 
     Args:
     url = url to generate a text scrape.
-    type = ['sketch', 'scrape', 'html'] string to specifiy capture tyope
+    type = ['sketch', 'scrape', 'html'] string to specifiy capture type
     """
     def get(self):
         """

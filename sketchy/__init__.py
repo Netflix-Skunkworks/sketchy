@@ -55,6 +55,7 @@ def make_celery(app):
 
         def on_failure(self, exc, task_id, args, kwargs, einfo):
             from sketchy.controllers.tasks import finisher
+
             # Check if the failures was on a capture or a static capture
             try:
                 if kwargs['model'] == 'capture':
@@ -123,6 +124,11 @@ def uploaded_file(filename):
     """
     return send_from_directory(app.config['LOCAL_STORAGE_FOLDER'],
                                filename, as_attachment=True)
+
+# Healthcheck
+@app.route('/healthcheck')
+def home():
+    return 'Ok'
 
 # Launch.
 if __name__ == '__main__':

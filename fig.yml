@@ -1,0 +1,41 @@
+web:
+  build: .
+  command: python manage.py runserver
+  ports:
+    - 7001:7001
+  links:
+    - redis
+    - postgres
+  environment:
+   sketchy_db: postgresql://postgres:postgres@postgres:5432
+   sketchy_broker_url: redis://redis:6379
+   sketchy_result_backend: redis://redis:6379
+  volumes:
+    - .:/app/
+
+worker:
+  build: .
+  command: celery worker -A sketchy.celery
+  links:
+    - redis
+    - postgres
+  environment:
+   sketchy_db: postgresql://postgres:postgres@postgres:5432
+   sketchy_broker_url: redis://redis:6379
+   sketchy_result_backend: redis://redis:6379
+   C_FORCE_ROOT: true
+  volumes:
+    - .:/app/
+
+redis:
+  image: redis:2.8.17
+  ports:
+   - 6379:6379
+
+postgres:
+  ports:
+   - 5432:5432
+  image: postgres:9.3.5
+  environment:
+   POSTGRES_USER: postgres
+   POSTGRES_PASSWORD: postgres

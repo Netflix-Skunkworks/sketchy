@@ -30,10 +30,12 @@ from sketchy.models.capture import Capture
 from sketchy.models.static import Static
 from sketchy.controllers.validators import grab_domain
 import subprocess32
+import socket
+import netaddr
 
 
 @celery.task(name='check_url', bind=True)
-def check_url(self, capture_id=0, retries=0):
+def check_url(self, capture_id=0, retries=0, model='capture'):
     """
     Check if a URL exists without downloading the whole file.
     We only check the URL header.
@@ -63,14 +65,14 @@ def check_url(self, capture_id=0, retries=0):
         capture_record.capture_status = str(err)
         capture_record.url_response_code = 0
 
-        check_url.retry(kwargs={'capture_id': capture_id, 'retries': capture_record.retry + 1}, exc=err, countdown=app.config['COOLDOWN'], max_retries=app.config['MAX_RETRIES'])
+        check_url.retry(kwargs={'capture_id': capture_id, 'retries': capture_record.retry + 1, 'model': model}, exc=err, countdown=app.config['COOLDOWN'], max_retries=app.config['MAX_RETRIES'])
 
     # If the code was not a good code, record the status as a 404 and raise an exception
     finally:
         db.session.commit()
     return str(response.status_code)
 
-def do_capture(status_code, the_record, base_url, model='capture'):
+def do_capture(status_code, the_record, base_url, model='capture', phantomjs_timeout=app.config['PHANTOMJS_TIMEOUT']):
     """
     Create a screenshot, text scrape, from a provided html file.
 
@@ -105,13 +107,12 @@ def do_capture(status_code, the_record, base_url, model='capture'):
     # Using subprocess32 backport, call phantom and if process hangs kill it
     pid = subprocess32.Popen(service_args, stdout=PIPE, stderr=PIPE)
     try:
-
-        stdout, stderr = pid.communicate(timeout=35)
+        stdout, stderr = pid.communicate(timeout=phantomjs_timeout)
     except subprocess32.TimeoutExpired:
         pid.kill()
         stdout, stderr = pid.communicate()
-        app.logger.error('PhantomJS Static Capture timeout')
-        raise Exception('PhantomJS Static Capture timeout')
+        app.logger.error('PhantomJS Capture timeout at {} seconds'.format(phantomjs_timeout))
+        raise subprocess32.TimeoutExpired('phantomjs capture',phantomjs_timeout)
 
     # If the subprocess has an error, raise an exception
     if stderr or stdout:
@@ -133,12 +134,12 @@ def do_capture(status_code, the_record, base_url, model='capture'):
         wordz = " ".join((text, tail)).strip('\t')
         if wordz and len(wordz) >= 2 and not re.match("^[ \t\n]*$", wordz):
             output += wordz.encode('utf-8')
-   
+
     # Since the filename format is different for static captures, update the filename
     # This will ensure the URLs are pointing to the correct resources
     if model == 'static':
         capture_name = capture_name.split('.')[0]
-        
+
     # Wite our html text that was parsed into our capture folder
     parsed_text = open(os.path.join(app.config['LOCAL_STORAGE_FOLDER'], capture_name + '.txt'), 'wb')
     parsed_text.write(output)
@@ -175,7 +176,10 @@ def s3_save(files_to_write, the_record):
     # Iterate through each file we need to write to s3
     for capture_type, file_name in files_to_write.items():
         # Connect to S3, generate Key, set path based on capture_type, write file to S3
-        conn = boto.connect_s3(calling_format=OrdinaryCallingFormat())
+        conn = boto.s3.connect_to_region(
+            region_name = app.config.get('S3_BUCKET_REGION_NAME'),
+            calling_format = boto.s3.connection.OrdinaryCallingFormat()
+        )
         key = Key(conn.get_bucket(app.config.get('S3_BUCKET_PREFIX')))
         path = "sketchy/{}/{}".format(capture_type, the_record.id)
         key.key = path
@@ -284,7 +288,7 @@ def celery_static_capture(self, base_url, capture_id=0, retries=0, model="static
         db.session.commit()
 
 @celery.task(name='celery_capture', ignore_result=True, bind=True)
-def celery_capture(self, status_code, base_url, capture_id=0, retries=0, model="capture"):
+def celery_capture(self, status_code, base_url, capture_id=0, retries=0, model="capture", phantomjs_timeout=app.config['PHANTOMJS_TIMEOUT']):
     """
     Celery task used to create sketch, scrape, html.
     Task also writes files to S3 or posts a callback depending on configuration file.
@@ -296,6 +300,17 @@ def celery_capture(self, status_code, base_url, capture_id=0, retries=0, model="
     db.session.commit()
 
     try:
+        # Check if we need to ignore certain hosts
+        ip_addr = socket.gethostbyname(grab_domain(capture_record.url))
+
+        if app.config['IP_BLACKLISTING']:
+            if netaddr.all_matching_cidrs(ip_addr, app.config['IP_BLACKLISTING_RANGE'].split(',')):
+                capture_record.capture_status = "IP BLACKLISTED:{}".format(ip_addr)
+                if capture_record.callback:
+                    finisher(capture_record)
+                else:
+                    capture_record.job_status = 'COMPLETED'
+                return True
         # Perform a callback or complete the task depending on error code and config
         if capture_record.url_response_code > 400 and app.config['CAPTURE_ERRORS'] == False:
             if capture_record.callback:
@@ -312,7 +327,7 @@ def celery_capture(self, status_code, base_url, capture_id=0, retries=0, model="
         raise celery_capture.retry(args=[status_code, base_url],
             kwargs = { 'capture_id' :capture_id, 'retries': capture_record.retry + 1, 'model': 'capture'}, exc=err,
             countdown=app.config['COOLDOWN'],
-            max_retries=app.config['MAX_RETRIES'])        
+            max_retries=app.config['MAX_RETRIES'])
     except Exception as err:
         app.logger.error(err)
         capture_record.job_status = 'FAILURE'
@@ -324,7 +339,7 @@ def celery_capture(self, status_code, base_url, capture_id=0, retries=0, model="
     # First perform the captures, then either write to S3, perform a callback, or neither
     try:
         # call the main capture function to retrieve sketches, scrapes, and html
-        files_to_write = do_capture(status_code, capture_record, base_url, model='capture')
+        files_to_write = do_capture(status_code, capture_record, base_url, model='capture', phantomjs_timeout=phantomjs_timeout)
         # Call the s3 save funciton if s3 is configured, and perform callback if configured.
         if app.config['USE_S3']:
             if capture_record.callback:
@@ -334,15 +349,24 @@ def celery_capture(self, status_code, base_url, capture_id=0, retries=0, model="
                 s3_save(files_to_write, capture_record)
         elif capture_record.callback:
                 finisher(capture_record)
-
-    # Only execute retries on ConnectionError exceptions, otherwise fail immediatley
+    # If the screenshot generation timed out, try to render again
+    except subprocess32.TimeoutExpired as err:
+        app.logger.error(err)
+        capture_record.job_status = 'RETRY'
+        capture_record.capture_status = str(err)
+        capture_record.retry = retries + 1
+        raise celery_capture.retry(args=[status_code, base_url],
+            kwargs={'capture_id' :capture_id, 'retries': capture_record.retry, 'model': 'capture', 'phantomjs_timeout': (capture_record.retry * 5) + phantomjs_timeout}, exc=err,
+            countdown=app.config['COOLDOWN'],
+            max_retries=app.config['MAX_RETRIES'])
+    # Retry on connection error exceptions
     except ConnectionError as err:
         app.logger.error(err)
         capture_record.job_status = 'RETRY'
         capture_record.capture_status = str(err)
         capture_record.retry = retries + 1
         raise celery_capture.retry(args=[status_code, base_url],
-            kwargs={'capture_id' :capture_id, 'retries': capture_record.retry + 1, 'model': 'capture'}, exc=err,
+            kwargs={'capture_id' :capture_id, 'retries': capture_record.retry, 'model': 'capture'}, exc=err,
             countdown=app.config['COOLDOWN'],
             max_retries=app.config['MAX_RETRIES'])
     # For all other exceptions, fail immediately
