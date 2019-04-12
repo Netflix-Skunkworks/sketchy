@@ -37,8 +37,9 @@ setup(
             'tldextract==1.4',
             'supervisor==3.1.0',
             'celery==3.1.13',
-            'boto==2.32.1',
+            'boto==2.49.0',
             'redis==2.10.1',
+            'MySQL-python==1.2.5',
             'lxml==3.3.5',
             'subprocess32==3.2.6',
             'netaddr==0.7.18'
