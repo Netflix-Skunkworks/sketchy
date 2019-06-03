@@ -26,6 +26,7 @@ setup(
     include_package_data=True,
     zip_safe=False,
     install_requires=[
+            'boto==2.49.0',
             'Flask==0.10.1',
             'Flask-SQLAlchemy==1.0',
             'MySQL-python==1.2.5',
@@ -37,7 +38,6 @@ setup(
             'tldextract==1.4',
             'supervisor==3.1.0',
             'celery==3.1.13',
-            'boto==2.49.0',
             'redis==2.10.1',
             'MySQL-python==1.2.5',
             'lxml==3.3.5',
