@@ -1,3 +1,4 @@
+# ----DEPRECATED----
 ![Sketchy](http://i.imgur.com/WvGJ8Ri.jpg)
 # Overview
 ## What is Sketchy?
