@@ -27,7 +27,7 @@ setup(
     zip_safe=False,
     install_requires=[
             'boto==2.49.0',
-            'Flask==0.10.1',
+            'Flask==1.0',
             'Flask-SQLAlchemy==1.0',
             'MySQL-python==1.2.5',
             'Flask-Script==2.0.5',
