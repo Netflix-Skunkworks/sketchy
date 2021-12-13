@@ -40,7 +40,7 @@ setup(
             'celery==3.1.13',
             'redis==2.10.1',
             'MySQL-python==1.2.5',
-            'lxml==3.3.5',
+            'lxml==4.6.5',
             'subprocess32==3.2.6',
             'netaddr==0.7.18'
         ]
