@@ -37,7 +37,7 @@ setup(
             'gunicorn==19.1.0',
             'tldextract==1.4',
             'supervisor==3.1.0',
-            'celery==3.1.13',
+            'celery==5.2.2',
             'redis==2.10.1',
             'MySQL-python==1.2.5',
             'lxml==3.3.5',
