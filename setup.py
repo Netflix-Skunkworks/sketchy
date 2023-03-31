@@ -38,7 +38,7 @@ setup(
             'tldextract==1.4',
             'supervisor==3.1.0',
             'celery==3.1.13',
-            'redis==2.10.1',
+            'redis==4.4.4',
             'MySQL-python==1.2.5',
             'lxml==3.3.5',
             'subprocess32==3.2.6',
