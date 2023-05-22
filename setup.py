@@ -33,7 +33,7 @@ setup(
             'Flask-Script==2.0.5',
             'SQLAlchemy==0.9.7',
             'Flask-RESTful==0.2.12',
-            'requests==2.20.0',
+            'requests==2.31.0',
             'gunicorn==19.1.0',
             'tldextract==1.4',
             'supervisor==3.1.0',
